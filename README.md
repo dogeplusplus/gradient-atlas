@@ -4,6 +4,27 @@ Generate print-ready SVG wall art from a real digital elevation model (DEM), wit
 
 The terrain becomes the loss function. Every optimizer starts at the same visible point and follows the measured surface toward a basin. The poster title is the DEM name, and the legend equations exactly match the implemented update rules.
 
+## Visual interface
+
+Launch the local studio:
+
+```bash
+uv run dem-art-ui
+```
+
+Alternatively, inside an activated Python virtual environment: `pip install -e . && dem-art-ui`.
+
+It opens at `http://127.0.0.1:8765`. Drag in a DEM, click its normalized terrain preview to place one or more starting points, choose optimizers and colours, then generate SVG or a 2400×3200 PNG.
+
+The interface runs entirely on your computer: uploaded terrain is processed in a temporary directory and is neither retained nor transmitted. CSV works without additional packages. For other formats:
+
+```bash
+pip install -e ".[images]"   # PNG and JPEG
+pip install -e ".[geotiff]" # GeoTIFF
+```
+
+Useful controls include optimizer selection, 5–80 steps, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. The CLI remains available for repeatable or automated rendering.
+
 ## Quick start
 
 Python 3.10+ is required. CSV input and SVG output have no third-party dependencies.

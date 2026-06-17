@@ -3,6 +3,7 @@ import unittest
 
 from dem_optimizer_art.dem import Surface, normalize, resample
 from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, run
+from dem_optimizer_art.webapp import parse_multipart
 
 
 def bowl(size=32):
@@ -24,6 +25,18 @@ class CoreTests(unittest.TestCase):
                 path = run(surface, name, (-1.5, -1.5), 12)
                 self.assertLess(surface.value(*path[-1]), surface.value(*path[0]))
                 self.assertIn(name, EQUATIONS)
+
+    def test_local_ui_multipart_upload(self):
+        boundary = "terrain-boundary"
+        body = (
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"smoothing\"\r\n\r\n8\r\n"
+            f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"terrain.csv\"\r\n"
+            "Content-Type: text/csv\r\n\r\n1,2\n3,4\r\n"
+            f"--{boundary}--\r\n"
+        ).encode()
+        fields, upload = parse_multipart(f"multipart/form-data; boundary={boundary}", body)
+        self.assertEqual(fields["smoothing"], "8")
+        self.assertEqual(upload, ("terrain.csv", b"1,2\n3,4"))
 
 
 if __name__ == "__main__":

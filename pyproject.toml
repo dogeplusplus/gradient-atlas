@@ -19,10 +19,13 @@ all = ["Pillow>=10", "rasterio>=1.3", "cairosvg>=2.7"]
 
 [project.scripts]
 dem-art = "dem_optimizer_art.cli:main"
+dem-art-ui = "dem_optimizer_art.webapp:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+dem_optimizer_art = ["web/*"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
-

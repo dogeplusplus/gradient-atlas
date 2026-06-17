@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 
 from .dem import Surface
-from .optimizers import EQUATIONS, OPTIMIZER_COLORS, run
+from .optimizers import EQUATION_LINES, OPTIMIZER_COLORS, run
 
 
 PALETTES = {
@@ -118,21 +118,24 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{INK}" font-family="monospace" font-size="12">START {start_index + 1}</text>')
     svg.append('</g>')
 
-    # Chromatic plotter-registration title, using the DEM name—not a generic heading.
+    # A crisp DEM title with a quiet six-pen rule—colour without faux blur.
+    title_size = min(60, max(42, 980 / max(1, len(title) * 0.62)))
+    svg.append(f'<text x="72" y="1248" fill="{INK}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
+    segment_width = 66
     for i, method in enumerate(methods):
-        offset = (i - (len(methods) - 1) / 2) * 1.4
-        svg.append(f'<text x="{72 + offset:.1f}" y="1260" fill="none" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="1.2" opacity="0.7" font-family="Helvetica,Arial,sans-serif" font-size="44" letter-spacing="5">{title}</text>')
-    svg.append(f'<text x="72" y="1260" fill="{INK}" font-family="Helvetica,Arial,sans-serif" font-size="44" letter-spacing="5">{title}</text>')
-    svg.append(f'<text x="75" y="1300" fill="{INK}" opacity="0.60" font-family="Helvetica,Arial,sans-serif" font-size="13" letter-spacing="2">OPTIMIZER TRAJECTORIES · {steps} STEPS · {len(starts)} START POINT(S)</text>')
-    svg.append(f'<line x1="75" y1="1325" x2="1125" y2="1325" stroke="{INK}" opacity="0.35"/>')
-    positions = [(75, 1360), (75, 1410), (75, 1460), (625, 1360), (625, 1410), (625, 1460)]
+        x1 = 75 + i * segment_width
+        svg.append(f'<line x1="{x1}" y1="1270" x2="{x1 + segment_width - 8}" y2="1270" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
+    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">OPTIMIZER TRAJECTORIES · {steps} STEPS · {len(starts)} START POINT(S)</text>')
+    svg.append(f'<line x1="75" y1="1328" x2="1125" y2="1328" stroke="{INK}" opacity="0.35"/>')
+    positions = [(75, 1356), (75, 1410), (75, 1464), (625, 1356), (625, 1410), (625, 1464)]
     for method, (x, y) in zip(methods, positions):
         c = OPTIMIZER_COLORS[method]
-        svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 25}" y2="{y - 5}" stroke="{c}" stroke-width="4"/>')
-        svg.append(f'<text x="{x + 35}" y="{y}" fill="{c}" font-family="monospace" font-size="12">{method.upper()}</text>')
-        svg.append(f'<text x="{x + 115}" y="{y}" fill="{INK}" font-family="monospace" font-size="10.5">{EQUATIONS[method]}</text>')
-    svg.extend([f'<line x1="75" y1="1495" x2="1125" y2="1495" stroke="{INK}" opacity="0.35"/>',
-                f'<text x="75" y="1530" fill="{INK}" opacity="0.55" font-family="monospace" font-size="11">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
+        svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 28}" y2="{y - 5}" stroke="{c}" stroke-width="5"/>')
+        svg.append(f'<text x="{x + 38}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="14">{method.upper()}</text>')
+        for line_index, equation in enumerate(EQUATION_LINES[method]):
+            svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{INK}" font-family="monospace" font-size="11.8">{equation}</text>')
+    svg.extend([f'<line x1="75" y1="1512" x2="1125" y2="1512" stroke="{INK}" opacity="0.35"/>',
+                f'<text x="75" y="1545" fill="{INK}" opacity="0.58" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg), encoding="utf-8")

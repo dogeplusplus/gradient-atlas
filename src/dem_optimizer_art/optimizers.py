@@ -19,6 +19,15 @@ EQUATIONS = {
     "Adam": "mₜ = β₁mₜ₋₁+(1−β₁)gₜ  ·  vₜ = β₂vₜ₋₁+(1−β₂)gₜ²  ·  θₜ₊₁ = θₜ−ηm̂ₜ/(√v̂ₜ+ε)",
 }
 
+EQUATION_LINES = {
+    "SGD": ("θₜ₊₁ = θₜ − ηgₜ",),
+    "Momentum": ("vₜ = βvₜ₋₁ + gₜ", "θₜ₊₁ = θₜ − ηvₜ"),
+    "NAG": ("gₜ = ∇L(θₜ − ηβvₜ₋₁)", "vₜ = βvₜ₋₁ + gₜ  ·  θₜ₊₁ = θₜ − ηvₜ"),
+    "AdaGrad": ("Gₜ = Gₜ₋₁ + gₜ²", "θₜ₊₁ = θₜ − ηgₜ/(√Gₜ+ε)"),
+    "RMSProp": ("vₜ = βvₜ₋₁ + (1−β)gₜ²", "θₜ₊₁ = θₜ − ηgₜ/(√vₜ+ε)"),
+    "Adam": ("mₜ = β₁mₜ₋₁+(1−β₁)gₜ  ·  vₜ = β₂vₜ₋₁+(1−β₂)gₜ²", "θₜ₊₁ = θₜ − ηm̂ₜ/(√v̂ₜ+ε)"),
+}
+
 
 def run(surface: Surface, name: str, start: tuple[float, float], steps: int) -> list[tuple[float, float]]:
     x, y = start
@@ -50,4 +59,3 @@ def run(surface: Surface, name: str, start: tuple[float, float], steps: int) -> 
         x, y = max(-2.95, min(2.95, x)), max(-2.95, min(2.95, y))
         path.append((x, y))
     return path
-

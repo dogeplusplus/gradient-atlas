@@ -14,9 +14,17 @@ uv run dem-art-ui
 
 Alternatively, inside an activated Python virtual environment: `pip install -e . && dem-art-ui`.
 
-It opens at `http://127.0.0.1:8765`. Drag in a DEM, click its normalized terrain preview to place one or more starting points, choose optimizers and colours, then generate SVG or a 2400×3200 PNG.
+It opens at `http://127.0.0.1:8765`. There are three ways to supply terrain:
 
-The interface runs entirely on your computer: uploaded terrain is processed in a temporary directory and is neither retained nor transmitted. CSV works without additional packages. For other formats:
+1. **Search map** — search for a named place, adjust or redraw the selection rectangle, and fetch its elevation.
+2. **Coordinates** — enter latitude, longitude, and a 2–200 km coverage radius.
+3. **Upload** — drag in an existing CSV, GeoTIFF, PNG, or JPEG DEM.
+
+The first two options fetch global Terrarium elevation tiles from the public AWS Open Data terrain dataset. Tiles are cached under `~/.cache/dem-optimizer-art/tiles`, so revisiting an area is much faster. Place search runs only when the search button is pressed—not as autocomplete—and is cached and rate-limited in accordance with the public Nominatim usage policy.
+
+After choosing terrain, click its normalized preview to place one or more starting points, choose optimizers and colours, then generate SVG or a 2400×3200 PNG.
+
+Uploaded DEMs remain entirely on your computer and are processed in a temporary directory. Map and coordinate modes necessarily contact OpenStreetMap/Nominatim for maps and place search, and AWS Open Data for elevation tiles. CSV works without additional packages. For other uploaded formats:
 
 ```bash
 pip install -e ".[images]"   # PNG and JPEG

@@ -9,9 +9,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib.resources import files
 from pathlib import Path
 from urllib.parse import urlparse
+from urllib.parse import parse_qs
 
 from .dem import prepare_surface
 from .render import render
+from .terrain_fetch import fetch_surface, search_places
 
 
 MAX_UPLOAD = 100 * 1024 * 1024
@@ -68,9 +70,17 @@ class AppHandler(BaseHTTPRequestHandler):
         self._send(status, "application/json; charset=utf-8", json.dumps(value).encode())
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
+        if path == "/api/search":
+            try:
+                query = parse_qs(parsed.query).get("q", [""])[0]
+                self._json(200, {"results": search_places(query)})
+            except Exception as exc:
+                self._json(400, {"error": str(exc)})
+            return
         relative = "index.html" if path == "/" else path.lstrip("/")
-        if relative not in {"index.html", "app.js", "styles.css"}:
+        if relative not in {"index.html", "app.js", "styles.css", "map.css"}:
             self._json(404, {"error": "Not found"})
             return
         resource = WEB_ROOT.joinpath(relative)
@@ -82,19 +92,29 @@ class AppHandler(BaseHTTPRequestHandler):
             length = int(self.headers.get("Content-Length", "0"))
             if not 0 < length <= MAX_UPLOAD:
                 raise ValueError("Upload must be between 1 byte and 100 MB")
+            if self.path == "/api/terrain":
+                request = json.loads(self.rfile.read(length))
+                surface, metadata = fetch_surface(float(request["north"]), float(request["south"]),
+                                                  float(request["east"]), float(request["west"]),
+                                                  int(request.get("resolution", 96)), int(request.get("smoothing", 8)))
+                self._json(200, {"grid": surface.grid, "width": surface.width,
+                                 "height": surface.height, "metadata": metadata})
+                return
             fields, upload = parse_multipart(self.headers.get("Content-Type", ""), self.rfile.read(length))
-            if upload is None:
-                raise ValueError("Choose a DEM file first")
-            filename, payload = upload
-            suffix = Path(filename).suffix.lower()
-            if suffix not in ALLOWED_SUFFIXES:
-                raise ValueError("Use CSV, GeoTIFF, PNG, or JPEG")
-            smoothing = int(fields.get("smoothing", 8))
-            resolution = int(fields.get("resolution", 96))
             with tempfile.TemporaryDirectory() as temp:
-                dem_path = Path(temp) / ("upload" + suffix)
-                dem_path.write_bytes(payload)
-                surface = prepare_surface(dem_path, smoothing, resolution)
+                if "grid" in fields:
+                    from .dem import Surface
+                    surface = Surface(json.loads(fields["grid"]))
+                else:
+                    if upload is None:
+                        raise ValueError("Choose or fetch a DEM first")
+                    filename, payload = upload
+                    suffix = Path(filename).suffix.lower()
+                    if suffix not in ALLOWED_SUFFIXES:
+                        raise ValueError("Use CSV, GeoTIFF, PNG, or JPEG")
+                    dem_path = Path(temp) / ("upload" + suffix)
+                    dem_path.write_bytes(payload)
+                    surface = prepare_surface(dem_path, int(fields.get("smoothing", 8)), int(fields.get("resolution", 96)))
                 if self.path == "/api/preview":
                     self._json(200, {"grid": surface.grid, "width": surface.width, "height": surface.height})
                 elif self.path == "/api/render":

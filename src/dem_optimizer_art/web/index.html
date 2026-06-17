@@ -4,7 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>DEM Optimizer Art</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/map.css">
 </head>
 <body>
   <header class="masthead">
@@ -19,13 +22,35 @@
     <aside class="panel controls">
       <section>
         <div class="section-heading"><b>01</b><h2>Terrain</h2></div>
-        <label id="dropzone" class="dropzone">
-          <input id="demFile" type="file" accept=".csv,.txt,.tif,.tiff,.png,.jpg,.jpeg">
-          <span class="drop-icon">↥</span>
-          <strong>Drop a DEM here</strong>
-          <small>CSV · GeoTIFF · PNG · JPEG · 100 MB max</small>
-          <em id="fileName">Choose file</em>
-        </label>
+        <div class="source-tabs">
+          <button class="active" data-source="map">Search map</button>
+          <button data-source="coords">Coordinates</button>
+          <button data-source="upload">Upload</button>
+        </div>
+        <div id="source-map" class="source-panel active">
+          <div class="search-row"><input id="placeSearch" type="search" placeholder="Search a mountain or place"><button id="searchPlace">⌕</button></div>
+          <div id="searchResults" class="search-results"></div>
+          <div id="map"></div>
+          <p class="source-hint">Draw or edit a rectangle around the terrain you want.</p>
+          <button id="fetchMap" class="fetch" disabled>Fetch selected terrain</button>
+        </div>
+        <div id="source-coords" class="source-panel">
+          <div class="two-col coordinate-inputs">
+            <label>Latitude<input id="latitude" type="number" min="-85" max="85" step="0.0001" value="37.745"></label>
+            <label>Longitude<input id="longitude" type="number" min="-180" max="180" step="0.0001" value="-119.59"></label>
+          </div>
+          <label>Coverage radius <span id="radiusOut">20 km</span><input id="radius" type="range" min="2" max="200" value="20"></label>
+          <button id="fetchCoords" class="fetch">Fetch terrain by coordinates</button>
+        </div>
+        <div id="source-upload" class="source-panel">
+          <label id="dropzone" class="dropzone">
+            <input id="demFile" type="file" accept=".csv,.txt,.tif,.tiff,.png,.jpg,.jpeg">
+            <span class="drop-icon">↥</span>
+            <strong>Drop a DEM here</strong>
+            <small>CSV · GeoTIFF · PNG · JPEG · 100 MB max</small>
+            <em id="fileName">Choose file</em>
+          </label>
+        </div>
         <label>Artwork title<input id="title" type="text" placeholder="NGORONGORO CRATER"></label>
       </section>
 
@@ -65,7 +90,7 @@
       </div>
       <div id="terrainShell" class="terrain-shell empty">
         <canvas id="terrainCanvas" width="800" height="600"></canvas>
-        <div class="empty-copy"><span>⌁</span><strong>Your terrain appears here</strong><small>Upload a DEM, then click directly on its preview.</small></div>
+        <div class="empty-copy"><span>⌁</span><strong>Your terrain appears here</strong><small>Search, enter coordinates, or upload a DEM.</small></div>
         <div id="loading" class="loading"><i></i><span>Reading terrain…</span></div>
       </div>
       <div class="coordinate-bar">
@@ -82,9 +107,11 @@
         <button id="downloadSvg" disabled>Download SVG</button>
         <button id="downloadPng" disabled>Download PNG</button>
       </div>
-      <p id="status" class="status">Upload a DEM to begin.</p>
+      <p id="status" class="status">Choose a terrain source to begin.</p>
     </aside>
   </main>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>

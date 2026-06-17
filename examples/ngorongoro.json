@@ -1,0 +1,16 @@
+{
+  "title": "Ngorongoro Crater",
+  "dem": "../data/ngorongoro_elevation.csv",
+  "output": "../output/ngorongoro.svg",
+  "steps": 28,
+  "start_points": [[0.64, 0.41]],
+  "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
+  "palette": "spectrum",
+  "smoothing": 8,
+  "dem_resolution": 96,
+  "grid_lines": 75,
+  "vertical_scale": 1.0,
+  "fill_opacity": 0.10,
+  "png_preview": true
+}
+

@@ -1,0 +1,14 @@
+{
+  "title": "Yosemite Valley",
+  "dem": "../data/yosemite_valley_elevation.csv",
+  "output": "../output/yosemite.svg",
+  "steps": 30,
+  "start_points": [[0.62, 0.39], [0.78, 0.56]],
+  "palette": "ocean",
+  "smoothing": 10,
+  "grid_lines": 80,
+  "vertical_scale": 0.90,
+  "fill_opacity": 0.08,
+  "png_preview": true
+}
+

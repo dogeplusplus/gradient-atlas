@@ -63,6 +63,8 @@ dem-art examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.30,0.75
 | `smoothing` | Low-pass passes; `6–12` works well for noisy real terrain |
 | `grid_lines` | Coloured wire density |
 | `vertical_scale` | Visual height exaggeration |
+| `auto_fit` | Measure and fit each surface into the available vertical poster area |
+| `surface_top` / `surface_bottom` | Vertical bounds used by automatic framing |
 | `fill_opacity` | Transparent colour wash beneath the wireframe |
 | `png_preview` | Also create a PNG when a converter is available |
 
@@ -103,4 +105,3 @@ This is an art and education project, not an optimizer benchmark: learning rates
 ```bash
 python3 -m unittest discover -s tests
 ```
-

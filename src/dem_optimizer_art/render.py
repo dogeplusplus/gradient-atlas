@@ -33,6 +33,27 @@ def _project(x: float, y: float, z: float, vertical_scale: float) -> tuple[float
     return 600 + 110.2 * (x - y), 740 + 45 * (x + y) - 150 * vertical_scale * z
 
 
+def _projector(surface: Surface, vertical_scale: float, auto_fit: bool,
+               top: float, bottom: float):
+    """Create a projection fitted vertically to the surface's actual coverage."""
+    if not auto_fit:
+        return lambda x, y, z: _project(x, y, z, vertical_scale)
+    ys = []
+    for j in range(49):
+        y = -3 + 6 * j / 48
+        for i in range(49):
+            x = -3 + 6 * i / 48
+            ys.append(_project(x, y, surface.value(x, y), vertical_scale)[1])
+    low, high = min(ys), max(ys)
+    scale = (bottom - top) / (high - low or 1)
+
+    def fitted(x: float, y: float, z: float) -> tuple[float, float]:
+        px, py = _project(x, y, z, vertical_scale)
+        return px, top + (py - low) * scale
+
+    return fitted
+
+
 def _points(points: list[tuple[float, float]]) -> str:
     return " ".join(f"{x:.1f},{y:.1f}" for x, y in points)
 
@@ -48,6 +69,8 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     methods = config.get("optimizers", list(OPTIMIZER_COLORS))
     starts_uv = config.get("start_points", [[0.62, 0.42]])
     starts = [(-3 + 6 * float(u), -3 + 6 * float(v)) for u, v in starts_uv]
+    project = _projector(surface, vertical_scale, bool(config.get("auto_fit", True)),
+                         float(config.get("surface_top", 90)), float(config.get("surface_bottom", 1185)))
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}">',
            f'<rect width="{W}" height="{H}" fill="{PAPER}"/>',
@@ -61,7 +84,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
             y0, y1 = -3 + 6 * iy / resolution, -3 + 6 * (iy + 1) / resolution
             corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
             zs = [surface.value(x, y) for x, y in corners]
-            cells.append((x0 + y0, [_project(x, y, z, vertical_scale) for (x, y), z in zip(corners, zs)], sum(zs) / 4))
+            cells.append((x0 + y0, [project(x, y, z) for (x, y), z in zip(corners, zs)], sum(zs) / 4))
     for _, points, z in sorted(cells):
         c = _colour(z, palette)
         svg.append(f'<polygon points="{_points(points)}" fill="{c}" fill-opacity="{fill_opacity}" stroke="none"/>')
@@ -75,7 +98,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
                 moving = -3 + 6 * j / (samples - 1)
                 x, y = (moving, fixed) if family == "x" else (fixed, moving)
                 z = surface.value(x, y)
-                points.append(_project(x, y, z, vertical_scale)); zs.append(z)
+                points.append(project(x, y, z)); zs.append(z)
             major = i % 6 == 0
             for j, (a, b) in enumerate(zip(points, points[1:])):
                 c = _colour((zs[j] + zs[j + 1]) / 2, palette)
@@ -85,12 +108,12 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         for method in methods:
             colour = OPTIMIZER_COLORS[method]
             path = run(surface, method, start, steps)
-            projected = [_project(x, y, surface.value(x, y) + 0.055, vertical_scale) for x, y in path]
+            projected = [project(x, y, surface.value(x, y) + 0.055) for x, y in path]
             svg.append(f'<polyline points="{_points(projected)}" stroke="{PAPER}" stroke-width="7" opacity="0.7"/>')
             svg.append(f'<polyline points="{_points(projected)}" stroke="{colour}" stroke-width="{3.2 if start_index == 0 else 2.2}" opacity="{0.95 if start_index == 0 else 0.62}"/>')
             end = projected[-1]
             svg.append(f'<circle cx="{end[0]:.1f}" cy="{end[1]:.1f}" r="4.8" fill="{colour}" stroke="{PAPER}" stroke-width="2"/>')
-        p = _project(start[0], start[1], surface.value(*start) + 0.06, vertical_scale)
+        p = project(start[0], start[1], surface.value(*start) + 0.06)
         svg.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="8" fill="{PAPER}" stroke="{INK}" stroke-width="2.5"/>')
         svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{INK}" font-family="monospace" font-size="12">START {start_index + 1}</text>')
     svg.append('</g>')

@@ -153,6 +153,7 @@ $('#expandArtwork').onclick=()=>{if(!svgUrl)return;$('#largeArtworkTitle').textC
 $$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close).close());
 $('#steps').oninput=e=>$('#stepsOut').value=e.target.value;$('#palette').onchange=updateStrip;updateStrip();
 $('#reliefMode').onchange=applyReliefMode;$('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode()};applyReliefMode();
+$('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;setStatus(`${mode[0].toUpperCase()+mode.slice(1)} selected. Generate again to update the trajectories.`)};
 $('#smoothing').addEventListener('change',()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)});
 
 function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}
@@ -162,7 +163,7 @@ $('#generate').onclick=async()=>{
   const button=$('#generate');button.disabled=true;button.querySelector('span').textContent='Generating…';setStatus('Projecting terrain and tracing optimizer paths…');
   const form=new FormData();if(demFile){form.append('file',demFile);form.append('smoothing',$('#smoothing').value);form.append('resolution','96')}else form.append('grid',JSON.stringify(grid));form.append('config',JSON.stringify(config()));
   try {const r=await fetch('/api/render',{method:'POST',body:form});if(!r.ok){const d=await r.json();throw new Error(d.error)}svgBlob=await r.blob();if(svgUrl)URL.revokeObjectURL(svgUrl);svgUrl=URL.createObjectURL(svgBlob);$('#artPreview').src=svgUrl;$('#artPreviewLarge').src=svgUrl;$('#artShell').classList.remove('empty');$('.large-art-shell').classList.add('ready');$('#downloadSvg').disabled=$('#downloadPng').disabled=$('#expandArtwork').disabled=false;setStatus('Artwork generated. SVG is print-ready and fully editable.')}
-  catch(e){setStatus(e.message,true)}finally{button.disabled=false;button.querySelector('span').textContent='Generate artwork'}
+  catch(e){setStatus(e.message,true)}finally{button.disabled=false;button.querySelector('span').textContent=`Generate ${$('#objective').value} artwork`}
 };
 
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}

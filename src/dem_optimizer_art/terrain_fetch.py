@@ -123,7 +123,16 @@ def fetch_surface(north: float, south: float, east: float, west: float,
              for x in range(resolution)] for y in range(resolution)]
     raw_min, raw_max = min(map(min, grid)), max(map(max, grid))
     surface = Surface(normalize(smooth(grid, smoothing)))
+    mean_latitude = (north + south) / 2
+    width_km = (east - west) * 111.32 * math.cos(math.radians(mean_latitude))
+    height_km = (north - south) * 111.32
+    relief_km = max(0.001, (raw_max - raw_min) / 1000)
+    # Match projected vertical relief to real relief/horizontal extent. The
+    # 1322/540 factor maps physical proportions into this projection's pixels.
+    natural_scale = max(0.08, min(1.2, relief_km / max(width_km, height_km, 0.001) * (1322 / 540)))
     return surface, {"zoom": zoom, "elevation_min": round(raw_min), "elevation_max": round(raw_max),
+                     "width_km": round(width_km, 1), "height_km": round(height_km, 1),
+                     "natural_vertical_scale": round(natural_scale, 3),
                      "tiles": len(tiles), "source": "AWS Terrain Tiles"}
 
 

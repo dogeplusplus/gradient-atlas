@@ -8,6 +8,7 @@ const palettes = {
 };
 let demFile = null, grid = null, starts = [], svgBlob = null, svgUrl = null;
 let sourceType = 'map', selectedBounds = null, lastBounds = null, selectedPlace = '';
+let naturalVerticalScale = null;
 const canvas = $('#terrainCanvas'), largeCanvas = $('#terrainCanvasLarge');
 
 function setStatus(text, error=false) {
@@ -26,6 +27,15 @@ function paletteColor(t) {
 function updateStrip() {
   $('#paletteStrip').style.background = `linear-gradient(90deg,${palettes[$('#palette').value].join(',')})`;
   if (grid) drawTerrain();
+}
+
+function applyReliefMode() {
+  const mode=$('#reliefMode').value, base=naturalVerticalScale ?? .31;
+  if(mode==='natural') $('#heightScale').value=base.toFixed(2);
+  if(mode==='subtle') $('#heightScale').value=Math.min(1.2,base*1.45).toFixed(2);
+  if(mode==='dramatic') $('#heightScale').value=Math.min(1.6,base*3).toFixed(2);
+  const labels={natural:'Natural aspect uses measured elevation relative to map width.',subtle:'Subtle boost uses 1.45× the terrain\'s physical relief.',dramatic:'Dramatic uses 3× physical relief.',manual:'Manual keeps the height scale you enter.'};
+  $('#reliefHint').textContent=labels[mode];
 }
 
 function drawTerrainCanvas(target) {
@@ -62,7 +72,7 @@ function acceptGrid(data, title, message) {
 }
 
 async function analyze(file) {
-  demFile=file; sourceType='upload'; $('#fileName').textContent=file.name;
+  demFile=file; sourceType='upload'; naturalVerticalScale=null; applyReliefMode(); $('#fileName').textContent=file.name;
   $('#title').value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').toUpperCase();
   $('#loading').classList.add('show'); $('#terrainShell').classList.remove('empty'); setStatus('Reading and normalizing the DEM…');
   const form=new FormData();form.append('file',file);form.append('smoothing',$('#smoothing').value);form.append('resolution','96');
@@ -78,7 +88,8 @@ async function fetchTerrain(bounds, title='') {
   try {
     const r=await fetch('/api/terrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...bounds,smoothing:+$('#smoothing').value,resolution:96})});
     const data=await r.json(); if(!r.ok)throw new Error(data.error);
-    acceptGrid(data,title,`Terrain ready · ${data.metadata.elevation_min}–${data.metadata.elevation_max} m · ${data.metadata.tiles} tile(s)`);
+    naturalVerticalScale=data.metadata.natural_vertical_scale;applyReliefMode();
+    acceptGrid(data,title,`Terrain ready · ${data.metadata.elevation_min}–${data.metadata.elevation_max} m · ${data.metadata.width_km}×${data.metadata.height_km} km · ${data.metadata.tiles} tile(s)`);
   } catch(e) { if(!grid)$('#terrainShell').classList.add('empty');setStatus(e.message,true); }
   finally { $('#loading').classList.remove('show'); }
 }
@@ -141,6 +152,7 @@ $('#expandTerrain').onclick=()=>{const dialog=$('#terrainDialog');dialog.showMod
 $('#expandArtwork').onclick=()=>{if(!svgUrl)return;$('#largeArtworkTitle').textContent=$('#title').value||'Generated artwork';$('#artDialog').showModal()};
 $$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close).close());
 $('#steps').oninput=e=>$('#stepsOut').value=e.target.value;$('#palette').onchange=updateStrip;updateStrip();
+$('#reliefMode').onchange=applyReliefMode;$('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode()};applyReliefMode();
 $('#smoothing').addEventListener('change',()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)});
 
 function config(){return{title:$('#title').value||'UNTITLED DEM',steps:+$('#steps').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}

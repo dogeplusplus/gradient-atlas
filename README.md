@@ -26,6 +26,8 @@ After choosing terrain, click its normalized preview to place one or more starti
 
 Both working previews can be expanded: **Expand terrain** opens a near-full-window start-point editor, while **Expand artwork** opens a large inspection view with download controls. The default terrain editor, source map, and artwork panel are also enlarged for desktop displays.
 
+Fetched terrain includes geographic dimensions, so relief can use a physical aspect ratio. **Natural aspect** matches elevation range to the selected area's width, **Subtle boost** applies a restrained 1.45× exaggeration, and **Dramatic** applies 3×. Manual mode remains available; uploaded files without geographic metadata use a conservative fallback.
+
 Uploaded DEMs remain entirely on your computer and are processed in a temporary directory. Map and coordinate modes necessarily contact OpenStreetMap/Nominatim for maps and place search, and AWS Open Data for elevation tiles. CSV works without additional packages. For other uploaded formats:
 
 ```bash

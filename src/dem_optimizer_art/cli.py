@@ -28,6 +28,7 @@ def main() -> None:
     parser.add_argument("--dem", type=Path, help="Override DEM path")
     parser.add_argument("--output", type=Path, help="Override SVG output")
     parser.add_argument("--steps", type=int, help="Override optimizer step count")
+    parser.add_argument("--step-length", type=float, help="Scale each optimizer's default learning rate")
     parser.add_argument("--start", action="append", metavar="X,Y", help="Start point in visual 0..1 coordinates; repeatable")
     parser.add_argument("--palette", choices=tuple(PALETTES), help="Override colour map")
     args = parser.parse_args()
@@ -37,6 +38,7 @@ def main() -> None:
     dem_path = args.dem or (base / config["dem"])
     output = args.output or (base / config.get("output", "output/art.svg"))
     if args.steps is not None: config["steps"] = args.steps
+    if args.step_length is not None: config["step_length"] = args.step_length
     if args.palette: config["palette"] = args.palette
     if args.start: config["start_points"] = [[float(v) for v in item.split(",")] for item in args.start]
     surface = prepare_surface(dem_path, int(config.get("smoothing", 8)), int(config.get("dem_resolution", 96)))
@@ -50,4 +52,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

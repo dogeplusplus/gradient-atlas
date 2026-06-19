@@ -35,6 +35,13 @@ class CoreTests(unittest.TestCase):
                 self.assertGreater(surface.value(*path[-1]), surface.value(*path[0]))
         self.assertIn("+", equation_lines("ascent")["SGD"][0])
 
+    def test_step_length_scales_an_update(self):
+        surface = Surface(normalize(bowl()))
+        start = (-1.0, -1.0)
+        short = run(surface, "SGD", start, 1, step_length=0.5)[-1]
+        long = run(surface, "SGD", start, 1, step_length=1.5)[-1]
+        self.assertGreater(math.dist(start, long), math.dist(start, short))
+
     def test_local_ui_multipart_upload(self):
         boundary = "terrain-boundary"
         body = (

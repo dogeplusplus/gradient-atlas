@@ -60,6 +60,8 @@
         <label>Objective<select id="objective"><option value="descent">Descent — reach valley</option><option value="ascent">Ascent — reach peak</option></select></label>
         <div class="range-row"><label>Steps</label><output id="stepsOut">28</output></div>
         <input id="steps" type="range" min="5" max="80" value="28">
+        <div class="range-row"><label>Step length</label><output id="stepLengthOut">1.00×</output></div>
+        <input id="stepLength" type="range" min="0.25" max="2" step="0.05" value="1">
         <div class="optimizer-grid" id="optimizers">
           <label style="--c:#e23b3b"><input type="checkbox" value="SGD" checked>SGD</label>
           <label style="--c:#f28e2b"><input type="checkbox" value="Momentum" checked>Momentum</label>

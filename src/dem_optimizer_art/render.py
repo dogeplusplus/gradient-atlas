@@ -61,6 +61,7 @@ def _points(points: list[tuple[float, float]]) -> str:
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
     title = config.get("title", "UNTITLED DEM").upper()
     steps = int(config.get("steps", 22))
+    step_length = float(config.get("step_length", 1.0))
     grid_lines = int(config.get("grid_lines", 75))
     vertical_scale = float(config.get("vertical_scale", 1.0))
     fill_opacity = float(config.get("fill_opacity", 0.10))
@@ -109,7 +110,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for start_index, start in enumerate(starts):
         for method in methods:
             colour = OPTIMIZER_COLORS[method]
-            path = run(surface, method, start, steps, objective)
+            path = run(surface, method, start, steps, objective, step_length)
             projected = [project(x, y, surface.value(x, y) + 0.055) for x, y in path]
             svg.append(f'<polyline points="{_points(projected)}" stroke="{PAPER}" stroke-width="7" opacity="0.7"/>')
             svg.append(f'<polyline points="{_points(projected)}" stroke="{colour}" stroke-width="{3.2 if start_index == 0 else 2.2}" opacity="{0.95 if start_index == 0 else 0.62}"/>')
@@ -127,7 +128,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for i, method in enumerate(methods):
         x1 = 75 + i * segment_width
         svg.append(f'<line x1="{x1}" y1="1270" x2="{x1 + segment_width - 8}" y2="1270" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
-    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · OPTIMIZER TRAJECTORIES · {steps} STEPS · {len(starts)} START POINT(S)</text>')
+    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH · {len(starts)} START POINT(S)</text>')
     svg.append(f'<line x1="75" y1="1328" x2="1125" y2="1328" stroke="{INK}" opacity="0.35"/>')
     positions = [(75, 1356), (75, 1410), (75, 1464), (625, 1356), (625, 1410), (625, 1464)]
     for method, (x, y) in zip(methods, positions):

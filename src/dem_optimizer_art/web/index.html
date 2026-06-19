@@ -90,7 +90,7 @@
     <section class="stage">
       <div class="stage-head">
         <div><p class="eyebrow">START POINT EDITOR</p><h2>Click the terrain to place starts</h2></div>
-        <div class="stage-actions"><button id="expandTerrain" class="quiet expand-button">⛶ Expand</button><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button></div>
+        <div class="stage-actions"><button id="expandTerrain" class="quiet expand-button">⛶ Expand</button><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button><button id="generate" class="generate generate-top" disabled><span>Generate descent artwork</span><b>→</b></button></div>
       </div>
       <div id="terrainShell" class="terrain-shell empty">
         <canvas id="terrainCanvas" width="800" height="600"></canvas>
@@ -101,7 +101,6 @@
         <span id="pointCount">0 start points</span>
         <span>Coordinates use visual 0–1 space</span>
       </div>
-      <button id="generate" class="generate" disabled><span>Generate descent artwork</span><b>→</b></button>
     </section>
 
     <aside class="panel result-panel">

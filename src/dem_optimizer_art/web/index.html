@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css">
   <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="/map.css">
+  <link rel="stylesheet" href="/viewer.css">
 </head>
 <body>
   <header class="masthead">
@@ -86,7 +87,7 @@
     <section class="stage">
       <div class="stage-head">
         <div><p class="eyebrow">START POINT EDITOR</p><h2>Click the terrain to place starts</h2></div>
-        <div class="stage-actions"><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button></div>
+        <div class="stage-actions"><button id="expandTerrain" class="quiet expand-button">⛶ Expand</button><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button></div>
       </div>
       <div id="terrainShell" class="terrain-shell empty">
         <canvas id="terrainCanvas" width="800" height="600"></canvas>
@@ -101,7 +102,7 @@
     </section>
 
     <aside class="panel result-panel">
-      <div class="section-heading"><b>04</b><h2>Artwork</h2></div>
+      <div class="section-heading result-heading"><div><b>04</b><h2>Artwork</h2></div><button id="expandArtwork" class="quiet expand-button" disabled>⛶ Expand</button></div>
       <div id="artShell" class="art-shell empty"><img id="artPreview" alt="Generated optimizer artwork"><div><span>◇</span><strong>Ready when you are</strong><small>Your print-ready artwork will appear here.</small></div></div>
       <div class="download-row">
         <button id="downloadSvg" disabled>Download SVG</button>
@@ -110,6 +111,19 @@
       <p id="status" class="status">Choose a terrain source to begin.</p>
     </aside>
   </main>
+
+  <dialog id="terrainDialog" class="viewer-dialog terrain-viewer">
+    <header><div><p class="eyebrow">LARGE TERRAIN EDITOR</p><h2>Place starting points precisely</h2></div><button class="dialog-close" data-close="terrainDialog" aria-label="Close terrain editor">×</button></header>
+    <div class="large-terrain-shell"><canvas id="terrainCanvasLarge" width="1400" height="900"></canvas><div class="dialog-empty">Choose or fetch terrain first.</div></div>
+    <footer><span id="largePointCount">0 start points</span><div><button id="largeUndo" class="quiet">Undo</button><button id="largeClear" class="quiet">Clear</button><button class="dialog-done" data-close="terrainDialog">Done</button></div></footer>
+  </dialog>
+
+  <dialog id="artDialog" class="viewer-dialog artwork-viewer">
+    <header><div><p class="eyebrow">LARGE ARTWORK PREVIEW</p><h2 id="largeArtworkTitle">Generated artwork</h2></div><button class="dialog-close" data-close="artDialog" aria-label="Close artwork preview">×</button></header>
+    <div class="large-art-shell"><img id="artPreviewLarge" alt="Large generated optimizer artwork"><div class="dialog-empty">Generate artwork first.</div></div>
+    <footer><span>Print-ready vector preview</span><div><button id="largeDownloadSvg" class="quiet">Download SVG</button><button id="largeDownloadPng" class="quiet">Download PNG</button><button class="dialog-done" data-close="artDialog">Done</button></div></footer>
+  </dialog>
+
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
   <script src="/app.js"></script>

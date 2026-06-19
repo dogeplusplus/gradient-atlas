@@ -72,7 +72,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     project = _projector(surface, vertical_scale, bool(config.get("auto_fit", True)),
                          float(config.get("surface_top", 90)), float(config.get("surface_bottom", 1185)))
 
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}">',
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
            f'<rect width="{W}" height="{H}" fill="{PAPER}"/>',
            '<g fill="none" stroke-linecap="round" stroke-linejoin="round">']
 

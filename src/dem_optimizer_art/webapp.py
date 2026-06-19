@@ -80,7 +80,7 @@ class AppHandler(BaseHTTPRequestHandler):
                 self._json(400, {"error": str(exc)})
             return
         relative = "index.html" if path == "/" else path.lstrip("/")
-        if relative not in {"index.html", "app.js", "styles.css", "map.css"}:
+        if relative not in {"index.html", "app.js", "styles.css", "map.css", "viewer.css"}:
             self._json(404, {"error": "Not found"})
             return
         resource = WEB_ROOT.joinpath(relative)

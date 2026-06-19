@@ -8,7 +8,7 @@ const palettes = {
 };
 let demFile = null, grid = null, starts = [], svgBlob = null, svgUrl = null;
 let sourceType = 'map', selectedBounds = null, lastBounds = null, selectedPlace = '';
-const canvas = $('#terrainCanvas'), ctx = canvas.getContext('2d');
+const canvas = $('#terrainCanvas'), largeCanvas = $('#terrainCanvasLarge');
 
 function setStatus(text, error=false) {
   $('#status').textContent = text;
@@ -28,9 +28,8 @@ function updateStrip() {
   if (grid) drawTerrain();
 }
 
-function drawTerrain() {
-  if (!grid) return;
-  const w=canvas.width, h=canvas.height, gh=grid.length, gw=grid[0].length, image=ctx.createImageData(w,h);
+function drawTerrainCanvas(target) {
+  const context=target.getContext('2d'), w=target.width, h=target.height, gh=grid.length, gw=grid[0].length, image=context.createImageData(w,h);
   for (let y=0; y<h; y++) {
     const row=grid[Math.floor(y/h*gh)];
     for (let x=0; x<w; x++) {
@@ -38,20 +37,27 @@ function drawTerrain() {
       image.data[o]=rgb[0]; image.data[o+1]=rgb[1]; image.data[o+2]=rgb[2]; image.data[o+3]=210;
     }
   }
-  ctx.putImageData(image,0,0); ctx.strokeStyle='rgba(255,255,255,.22)'; ctx.lineWidth=1;
+  context.putImageData(image,0,0); context.strokeStyle='rgba(255,255,255,.22)'; context.lineWidth=1;
   for(let i=0;i<=16;i++) {
-    ctx.beginPath();ctx.moveTo(i*w/16,0);ctx.lineTo(i*w/16,h);ctx.stroke();
-    ctx.beginPath();ctx.moveTo(0,i*h/16);ctx.lineTo(w,i*h/16);ctx.stroke();
+    context.beginPath();context.moveTo(i*w/16,0);context.lineTo(i*w/16,h);context.stroke();
+    context.beginPath();context.moveTo(0,i*h/16);context.lineTo(w,i*h/16);context.stroke();
   }
   starts.forEach((p,i) => {
-    const x=p[0]*w,y=p[1]*h;ctx.beginPath();ctx.arc(x,y,12,0,Math.PI*2);ctx.fillStyle='#f8f5ee';ctx.fill();
-    ctx.lineWidth=4;ctx.strokeStyle='#17324d';ctx.stroke();ctx.fillStyle='#17324d';ctx.font='bold 13px ui-monospace';ctx.fillText(String(i+1),x+18,y+5);
+    const scale=Math.max(1,w/800),x=p[0]*w,y=p[1]*h;context.beginPath();context.arc(x,y,12*scale,0,Math.PI*2);context.fillStyle='#f8f5ee';context.fill();
+    context.lineWidth=4*scale;context.strokeStyle='#17324d';context.stroke();context.fillStyle='#17324d';context.font=`bold ${13*scale}px ui-monospace`;context.fillText(String(i+1),x+18*scale,y+5*scale);
   });
+}
+
+function drawTerrain() {
+  if (!grid) return;
+  drawTerrainCanvas(canvas); drawTerrainCanvas(largeCanvas);
   $('#pointCount').textContent=`${starts.length} start point${starts.length===1?'':'s'}`;
+  $('#largePointCount').textContent=$('#pointCount').textContent;
 }
 
 function acceptGrid(data, title, message) {
   grid=data.grid; demFile=null; starts=[]; drawTerrain(); $('#terrainShell').classList.remove('empty');
+  $('.large-terrain-shell').classList.add('ready');
   $('#generate').disabled=false; if(title) $('#title').value=title.toUpperCase(); setStatus(message);
 }
 
@@ -61,8 +67,8 @@ async function analyze(file) {
   $('#loading').classList.add('show'); $('#terrainShell').classList.remove('empty'); setStatus('Reading and normalizing the DEM…');
   const form=new FormData();form.append('file',file);form.append('smoothing',$('#smoothing').value);form.append('resolution','96');
   try { const r=await fetch('/api/preview',{method:'POST',body:form}), data=await r.json(); if(!r.ok)throw new Error(data.error);
-    grid=data.grid;starts=[];drawTerrain();$('#generate').disabled=false;setStatus('DEM ready. Click the terrain to place a start point.');
-  } catch(e) { grid=null;$('#terrainShell').classList.add('empty');$('#generate').disabled=true;setStatus(e.message,true); }
+    grid=data.grid;starts=[];drawTerrain();$('.large-terrain-shell').classList.add('ready');$('#generate').disabled=false;setStatus('DEM ready. Click the terrain to place a start point.');
+  } catch(e) { grid=null;$('#terrainShell').classList.add('empty');$('.large-terrain-shell').classList.remove('ready');$('#generate').disabled=true;setStatus(e.message,true); }
   finally { $('#loading').classList.remove('show'); }
 }
 
@@ -126,8 +132,14 @@ const dz=$('#dropzone');['dragenter','dragover'].forEach(n=>dz.addEventListener(
 ['dragleave','drop'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.remove('drag')}));
 dz.addEventListener('drop',e=>e.dataTransfer.files[0]&&analyze(e.dataTransfer.files[0]));
 
-canvas.addEventListener('click',e=>{if(!grid)return;const r=canvas.getBoundingClientRect();starts.push([(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]);drawTerrain()});
+function addStartFromCanvas(e){if(!grid)return;const r=e.currentTarget.getBoundingClientRect();starts.push([(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]);drawTerrain()}
+canvas.addEventListener('click',addStartFromCanvas);largeCanvas.addEventListener('click',addStartFromCanvas);
 $('#undoStart').onclick=()=>{starts.pop();drawTerrain()};$('#clearStarts').onclick=()=>{starts=[];drawTerrain()};
+$('#largeUndo').onclick=$('#undoStart').onclick;$('#largeClear').onclick=$('#clearStarts').onclick;
+
+$('#expandTerrain').onclick=()=>{const dialog=$('#terrainDialog');dialog.showModal();requestAnimationFrame(drawTerrain)};
+$('#expandArtwork').onclick=()=>{if(!svgUrl)return;$('#largeArtworkTitle').textContent=$('#title').value||'Generated artwork';$('#artDialog').showModal()};
+$$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close).close());
 $('#steps').oninput=e=>$('#stepsOut').value=e.target.value;$('#palette').onchange=updateStrip;updateStrip();
 $('#smoothing').addEventListener('change',()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)});
 
@@ -137,7 +149,7 @@ $('#generate').onclick=async()=>{
   if(!grid)return;if(!$$('#optimizers input:checked').length){setStatus('Select at least one optimizer.',true);return}
   const button=$('#generate');button.disabled=true;button.querySelector('span').textContent='Generating…';setStatus('Projecting terrain and tracing optimizer paths…');
   const form=new FormData();if(demFile){form.append('file',demFile);form.append('smoothing',$('#smoothing').value);form.append('resolution','96')}else form.append('grid',JSON.stringify(grid));form.append('config',JSON.stringify(config()));
-  try {const r=await fetch('/api/render',{method:'POST',body:form});if(!r.ok){const d=await r.json();throw new Error(d.error)}svgBlob=await r.blob();if(svgUrl)URL.revokeObjectURL(svgUrl);svgUrl=URL.createObjectURL(svgBlob);$('#artPreview').src=svgUrl;$('#artShell').classList.remove('empty');$('#downloadSvg').disabled=$('#downloadPng').disabled=false;setStatus('Artwork generated. SVG is print-ready and fully editable.')}
+  try {const r=await fetch('/api/render',{method:'POST',body:form});if(!r.ok){const d=await r.json();throw new Error(d.error)}svgBlob=await r.blob();if(svgUrl)URL.revokeObjectURL(svgUrl);svgUrl=URL.createObjectURL(svgBlob);$('#artPreview').src=svgUrl;$('#artPreviewLarge').src=svgUrl;$('#artShell').classList.remove('empty');$('.large-art-shell').classList.add('ready');$('#downloadSvg').disabled=$('#downloadPng').disabled=$('#expandArtwork').disabled=false;setStatus('Artwork generated. SVG is print-ready and fully editable.')}
   catch(e){setStatus(e.message,true)}finally{button.disabled=false;button.querySelector('span').textContent='Generate artwork'}
 };
 
@@ -145,3 +157,4 @@ function download(blob,name){const a=document.createElement('a');a.href=URL.crea
 function slug(){return($('#title').value||'dem-art').toLowerCase().replace(/[^a-z0-9]+/g,'-')}
 $('#downloadSvg').onclick=()=>svgBlob&&download(svgBlob,`${slug()}.svg`);
 $('#downloadPng').onclick=()=>{if(!svgUrl)return;const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=2400;c.height=3200;c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>download(b,`${slug()}.png`),'image/png')};img.src=svgUrl};
+$('#largeDownloadSvg').onclick=$('#downloadSvg').onclick;$('#largeDownloadPng').onclick=$('#downloadPng').onclick;

@@ -1,0 +1,28 @@
+.workspace{grid-template-columns:300px minmax(560px,1fr) minmax(360px,26vw)}
+.stage{min-height:850px}
+.terrain-shell{min-height:620px}
+#map{height:300px}
+.result-panel{min-width:360px}
+.result-heading{justify-content:space-between}
+.result-heading>div{display:flex;align-items:center;gap:10px}
+.result-heading .expand-button{margin-left:auto}
+.art-shell{aspect-ratio:auto;min-height:520px;max-height:calc(100vh - 255px)}
+.expand-button{font-weight:700;color:#1d6f73;border-color:#9bbab8}
+
+.viewer-dialog{width:min(94vw,1500px);height:92vh;max-width:none;max-height:none;padding:0;border:1px solid #aebbb8;border-radius:16px;background:#f8f5ee;color:#17324d;box-shadow:0 28px 90px rgba(19,46,71,.28);overflow:hidden}
+.viewer-dialog::backdrop{background:rgba(15,32,44,.65);backdrop-filter:blur(5px)}
+.viewer-dialog[open]{display:grid;grid-template-rows:auto minmax(0,1fr) auto}
+.viewer-dialog header,.viewer-dialog footer{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-color:#cbd1cd;background:#f8f5ee}
+.viewer-dialog header{border-bottom:1px solid #cbd1cd}.viewer-dialog footer{border-top:1px solid #cbd1cd;font:11px ui-monospace,SFMono-Regular,Menlo,monospace;color:#6d7d88}
+.viewer-dialog header h2{font-size:21px}.viewer-dialog footer>div{display:flex;gap:8px}
+.dialog-close{width:38px;height:38px;border:1px solid #bcc7c4;border-radius:50%;background:transparent;color:#17324d;font-size:25px;line-height:1;cursor:pointer}
+.dialog-close:hover{background:#e9ece7}.dialog-done{height:34px;padding:0 18px;border:0;border-radius:6px;background:#17324d;color:#fff;font-weight:700;cursor:pointer}
+.large-terrain-shell,.large-art-shell{position:relative;min-height:0;background:#f0eee7;overflow:hidden}
+#terrainCanvasLarge{position:absolute;inset:0;width:100%;height:100%;object-fit:fill;cursor:crosshair}
+.large-art-shell{display:grid;place-items:center;padding:20px;background:#e8e5dd}
+#artPreviewLarge{display:none;position:absolute;inset:20px;width:calc(100% - 40px);height:calc(100% - 40px);object-fit:contain;filter:drop-shadow(0 15px 22px rgba(30,45,54,.14))}
+.large-art-shell.ready #artPreviewLarge{display:block}
+.dialog-empty{position:absolute;inset:0;display:grid;place-items:center;color:#7b898e;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
+.large-terrain-shell.ready .dialog-empty,.large-art-shell.ready .dialog-empty{display:none}
+
+@media(max-width:1300px){.workspace{grid-template-columns:285px minmax(530px,1fr) 350px}.panel{padding-left:18px;padding-right:18px}}

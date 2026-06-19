@@ -24,6 +24,8 @@ The first two options fetch global Terrarium elevation tiles from the public AWS
 
 After choosing terrain, click its normalized preview to place one or more starting points, choose optimizers and colours, then generate SVG or a 2400×3200 PNG.
 
+Both working previews can be expanded: **Expand terrain** opens a near-full-window start-point editor, while **Expand artwork** opens a large inspection view with download controls. The default terrain editor, source map, and artwork panel are also enlarged for desktop displays.
+
 Uploaded DEMs remain entirely on your computer and are processed in a temporary directory. Map and coordinate modes necessarily contact OpenStreetMap/Nominatim for maps and place search, and AWS Open Data for elevation tiles. CSV works without additional packages. For other uploaded formats:
 
 ```bash

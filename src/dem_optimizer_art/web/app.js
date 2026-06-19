@@ -155,7 +155,7 @@ $('#steps').oninput=e=>$('#stepsOut').value=e.target.value;$('#palette').onchang
 $('#reliefMode').onchange=applyReliefMode;$('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode()};applyReliefMode();
 $('#smoothing').addEventListener('change',()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)});
 
-function config(){return{title:$('#title').value||'UNTITLED DEM',steps:+$('#steps').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}
+function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}
 
 $('#generate').onclick=async()=>{
   if(!grid)return;if(!$$('#optimizers input:checked').length){setStatus('Select at least one optimizer.',true);return}

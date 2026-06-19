@@ -2,6 +2,8 @@
 
 Generate print-ready SVG wall art from a real digital elevation model (DEM), with trajectories for SGD, Momentum, NAG, AdaGrad, RMSProp, and Adam.
 
+Choose **Descent** to minimize elevation and reach a valley, or **Ascent** to maximize elevation and climb toward a peak. Every optimizer and displayed equation switches direction consistently.
+
 The terrain becomes the loss function. Every optimizer starts at the same visible point and follows the measured surface toward a basin. The poster title is the DEM name, and the legend equations exactly match the implemented update rules.
 
 ## Visual interface

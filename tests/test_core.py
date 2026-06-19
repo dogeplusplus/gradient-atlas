@@ -2,7 +2,7 @@ import math
 import unittest
 
 from dem_optimizer_art.dem import Surface, normalize, resample
-from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, run
+from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, run
 from dem_optimizer_art.webapp import parse_multipart
 from dem_optimizer_art.terrain_fetch import _zoom_for_bbox
 
@@ -26,6 +26,14 @@ class CoreTests(unittest.TestCase):
                 path = run(surface, name, (-1.5, -1.5), 12)
                 self.assertLess(surface.value(*path[-1]), surface.value(*path[0]))
                 self.assertIn(name, EQUATIONS)
+
+    def test_all_optimizers_ascend_a_bowl(self):
+        surface = Surface(normalize(bowl()))
+        for name in OPTIMIZER_COLORS:
+            with self.subTest(optimizer=name):
+                path = run(surface, name, (-1.0, -1.0), 8, "ascent")
+                self.assertGreater(surface.value(*path[-1]), surface.value(*path[0]))
+        self.assertIn("+", equation_lines("ascent")["SGD"][0])
 
     def test_local_ui_multipart_upload(self):
         boundary = "terrain-boundary"

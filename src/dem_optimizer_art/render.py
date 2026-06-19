@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 
 from .dem import Surface
-from .optimizers import EQUATION_LINES, OPTIMIZER_COLORS, run
+from .optimizers import equation_lines, OPTIMIZER_COLORS, run
 
 
 PALETTES = {
@@ -67,6 +67,8 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     palette_value = config.get("palette", "spectrum")
     palette = tuple(palette_value) if isinstance(palette_value, list) else PALETTES.get(palette_value, PALETTES["spectrum"])
     methods = config.get("optimizers", list(OPTIMIZER_COLORS))
+    objective = config.get("objective", "descent")
+    equations = equation_lines(objective)
     starts_uv = config.get("start_points", [[0.62, 0.42]])
     starts = [(-3 + 6 * float(u), -3 + 6 * float(v)) for u, v in starts_uv]
     project = _projector(surface, vertical_scale, bool(config.get("auto_fit", True)),
@@ -107,7 +109,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for start_index, start in enumerate(starts):
         for method in methods:
             colour = OPTIMIZER_COLORS[method]
-            path = run(surface, method, start, steps)
+            path = run(surface, method, start, steps, objective)
             projected = [project(x, y, surface.value(x, y) + 0.055) for x, y in path]
             svg.append(f'<polyline points="{_points(projected)}" stroke="{PAPER}" stroke-width="7" opacity="0.7"/>')
             svg.append(f'<polyline points="{_points(projected)}" stroke="{colour}" stroke-width="{3.2 if start_index == 0 else 2.2}" opacity="{0.95 if start_index == 0 else 0.62}"/>')
@@ -125,14 +127,14 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for i, method in enumerate(methods):
         x1 = 75 + i * segment_width
         svg.append(f'<line x1="{x1}" y1="1270" x2="{x1 + segment_width - 8}" y2="1270" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
-    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">OPTIMIZER TRAJECTORIES · {steps} STEPS · {len(starts)} START POINT(S)</text>')
+    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · OPTIMIZER TRAJECTORIES · {steps} STEPS · {len(starts)} START POINT(S)</text>')
     svg.append(f'<line x1="75" y1="1328" x2="1125" y2="1328" stroke="{INK}" opacity="0.35"/>')
     positions = [(75, 1356), (75, 1410), (75, 1464), (625, 1356), (625, 1410), (625, 1464)]
     for method, (x, y) in zip(methods, positions):
         c = OPTIMIZER_COLORS[method]
         svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 28}" y2="{y - 5}" stroke="{c}" stroke-width="5"/>')
         svg.append(f'<text x="{x + 38}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="14">{method.upper()}</text>')
-        for line_index, equation in enumerate(EQUATION_LINES[method]):
+        for line_index, equation in enumerate(equations[method]):
             svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{INK}" font-family="monospace" font-size="11.8">{equation}</text>')
     svg.extend([f'<line x1="75" y1="1512" x2="1125" y2="1512" stroke="{INK}" opacity="0.35"/>',
                 f'<text x="75" y="1545" fill="{INK}" opacity="0.58" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])

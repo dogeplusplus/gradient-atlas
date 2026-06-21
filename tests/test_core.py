@@ -3,11 +3,11 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from dem_optimizer_art.dem import Surface, normalize, resample
-from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
-from dem_optimizer_art.render import _clean_trajectory, _direction_chevron, _trajectory_d, render
-from dem_optimizer_art.webapp import parse_multipart
-from dem_optimizer_art.terrain_fetch import _zoom_for_bbox
+from gradient_atlas.dem import Surface, normalize, resample
+from gradient_atlas.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
+from gradient_atlas.render import _clean_trajectory, _direction_chevron, _trajectory_d, render
+from gradient_atlas.webapp import parse_multipart
+from gradient_atlas.terrain_fetch import _zoom_for_bbox
 
 
 def bowl(size=32):

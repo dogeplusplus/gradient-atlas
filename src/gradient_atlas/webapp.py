@@ -19,7 +19,7 @@ from .terrain_fetch import fetch_surface, search_places
 
 MAX_UPLOAD = 100 * 1024 * 1024
 ALLOWED_SUFFIXES = {".csv", ".txt", ".tif", ".tiff", ".png", ".jpg", ".jpeg"}
-WEB_ROOT = files("dem_optimizer_art").joinpath("web")
+WEB_ROOT = files("gradient_atlas").joinpath("web")
 
 
 def parse_multipart(content_type: str, body: bytes) -> tuple[dict[str, str], tuple[str, bytes] | None]:

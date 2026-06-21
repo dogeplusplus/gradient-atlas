@@ -94,29 +94,46 @@ def find_high_disagreement_starts(
     methods = [name for name in methods if name in OPTIMIZER_COLORS]
     if len(methods) < 2:
         raise ValueError("Select at least two optimizers to measure disagreement")
+    if objective not in ("descent", "ascent"):
+        raise ValueError("objective must be 'descent' or 'ascent'")
     count = max(1, min(6, int(count)))
     probe_steps = max(6, min(24, int(steps)))
     scored: list[tuple[float, float, float]] = []
+    candidates = []
 
     for row in range(candidate_grid):
         v = 0.14 + 0.72 * row / (candidate_grid - 1)
         for column in range(candidate_grid):
             u = 0.14 + 0.72 * column / (candidate_grid - 1)
             start = (-3 + 6 * u, -3 + 6 * v)
-            paths = [run(surface, method, start, probe_steps, objective, step_length) for method in methods]
-            sample_indices = [round((probe_steps - 1) * fraction) for fraction in (0.25, 0.5, 0.75, 1.0)]
-            separation = 0.0
-            comparisons = 0
-            for sample_index, weight in zip(sample_indices, (0.35, 0.55, 0.8, 1.0)):
-                for left in range(len(paths)):
-                    for right in range(left + 1, len(paths)):
-                        separation += weight * math.dist(paths[left][sample_index], paths[right][sample_index])
-                        comparisons += 1
-            separation /= comparisons or 1
-            movement = sum(math.dist(start, path[-1]) for path in paths) / len(paths)
-            edge_hits = sum(1 for path in paths if max(abs(path[-1][0]), abs(path[-1][1])) > 2.88)
-            score = separation * (0.65 + 0.35 * min(1.0, movement / 1.2)) * (0.55 ** edge_hits)
-            scored.append((score, u, v))
+            candidates.append((u, v, start, surface.value(*start)))
+
+    elevations = sorted(candidate[3] for candidate in candidates)
+    percentile = 0.65 if objective == "descent" else 0.35
+    elevation_cutoff = elevations[round((len(elevations) - 1) * percentile)]
+    if objective == "descent":
+        eligible = [candidate for candidate in candidates if candidate[3] >= elevation_cutoff]
+    else:
+        eligible = [candidate for candidate in candidates if candidate[3] <= elevation_cutoff]
+
+    for u, v, start, elevation in eligible:
+        paths = [run(surface, method, start, probe_steps, objective, step_length) for method in methods]
+        sample_indices = [round((probe_steps - 1) * fraction) for fraction in (0.25, 0.5, 0.75, 1.0)]
+        separation = 0.0
+        comparisons = 0
+        for sample_index, weight in zip(sample_indices, (0.35, 0.55, 0.8, 1.0)):
+            for left in range(len(paths)):
+                for right in range(left + 1, len(paths)):
+                    separation += weight * math.dist(paths[left][sample_index], paths[right][sample_index])
+                    comparisons += 1
+        separation /= comparisons or 1
+        movement = sum(math.dist(start, path[-1]) for path in paths) / len(paths)
+        edge_hits = sum(1 for path in paths if max(abs(path[-1][0]), abs(path[-1][1])) > 2.88)
+        elevation_span = (elevations[-1] - elevations[0]) or 1.0
+        relative_elevation = (elevation - elevations[0]) / elevation_span
+        altitude_preference = relative_elevation if objective == "descent" else 1.0 - relative_elevation
+        score = separation * (0.65 + 0.35 * min(1.0, movement / 1.2)) * (0.55 ** edge_hits) * (0.85 + 0.15 * altitude_preference)
+        scored.append((score, u, v))
 
     scored.sort(reverse=True)
     selected: list[tuple[float, float]] = []

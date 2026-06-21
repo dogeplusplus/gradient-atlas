@@ -52,10 +52,17 @@ class CoreTests(unittest.TestCase):
 
     def test_high_disagreement_starts_are_spatially_distinct(self):
         surface = Surface(normalize(bowl()))
-        starts = find_high_disagreement_starts(surface, list(OPTIMIZER_COLORS), 18, count=3)
-        self.assertEqual(len(starts), 3)
-        self.assertTrue(all(0.14 <= value <= 0.86 for point in starts for value in point))
-        self.assertTrue(all(math.dist(a, b) >= 0.22 for i, a in enumerate(starts) for b in starts[i + 1:]))
+        descent = find_high_disagreement_starts(surface, list(OPTIMIZER_COLORS), 18, count=3)
+        ascent = find_high_disagreement_starts(surface, list(OPTIMIZER_COLORS), 18, "ascent", count=3)
+        self.assertEqual(len(descent), 3)
+        self.assertEqual(len(ascent), 3)
+        self.assertTrue(all(0.14 <= value <= 0.86 for point in descent + ascent for value in point))
+        self.assertTrue(all(math.dist(a, b) >= 0.22 for points in (descent, ascent) for i, a in enumerate(points) for b in points[i + 1:]))
+        to_surface = lambda point: (-3 + 6 * point[0], -3 + 6 * point[1])
+        self.assertGreater(
+            sum(surface.value(*to_surface(point)) for point in descent) / len(descent),
+            sum(surface.value(*to_surface(point)) for point in ascent) / len(ascent),
+        )
 
     def test_local_ui_multipart_upload(self):
         boundary = "terrain-boundary"

@@ -30,7 +30,7 @@ Both working previews can be expanded: **Expand terrain** opens a near-full-wind
 
 Artwork updates automatically after terrain regions, start points, optimizer settings, colours, relief, or tile rotation change. Updates are debounced and serialized, so rapid slider and map events produce one current render instead of a backlog. The Generate button remains in the editor header for an immediate manual refresh.
 
-Use **Find high-disagreement starts** to scan the current DEM for one to five spatially separated locations where the selected optimizers naturally produce the most distinct paths. The search respects the current objective, step count, and step length, while penalizing trajectories that simply run into the tile boundary.
+Use **Find high-disagreement starts** to scan the current DEM for one to five spatially separated locations where the selected optimizers naturally produce the most distinct paths. Descent starts are constrained to the upper 35% of candidate elevations; ascent starts use the lower 35%, so each trajectory has meaningful relief available in its intended direction. The search also respects the current step count and step length while penalizing trajectories that simply run into the tile boundary.
 
 The **Featured terrain** menu includes 20 famous landscapes selected for optimizer-friendly elevation geometry: calderas, breached volcanoes, branching canyons, glacial valleys, pyramidal peaks, and multi-ridge massifs. Each preset supplies a tuned centre and coverage radius, then fetches and renders automatically.
 

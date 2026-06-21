@@ -20,7 +20,7 @@ def _load_image(path: Path) -> Grid:
     try:
         from PIL import Image
     except ImportError as exc:
-        raise RuntimeError("PNG/JPEG input needs: pip install 'dem-optimizer-art[images]'") from exc
+        raise RuntimeError("PNG/JPEG input needs: pip install 'gradient-atlas[images]'") from exc
     image = Image.open(path)
     if image.mode in ("I", "F", "I;16"):
         return [[float(image.getpixel((x, y))) for x in range(image.width)] for y in range(image.height)]
@@ -32,7 +32,7 @@ def _load_geotiff(path: Path) -> Grid:
     try:
         import rasterio
     except ImportError as exc:
-        raise RuntimeError("GeoTIFF input needs: pip install 'dem-optimizer-art[geotiff]'") from exc
+        raise RuntimeError("GeoTIFF input needs: pip install 'gradient-atlas[geotiff]'") from exc
     with rasterio.open(path) as source:
         band = source.read(1, masked=True)
         fill = float(band.mean())
@@ -106,4 +106,3 @@ class Surface:
 
 def prepare_surface(path: str | Path, smoothing: int = 8, size: int = 96) -> Surface:
     return Surface(normalize(smooth(resample(load_dem(path), size), smoothing)))
-

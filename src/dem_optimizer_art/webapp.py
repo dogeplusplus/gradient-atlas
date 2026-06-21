@@ -52,7 +52,7 @@ def parse_multipart(content_type: str, body: bytes) -> tuple[dict[str, str], tup
 
 
 class AppHandler(BaseHTTPRequestHandler):
-    server_version = "DEMArt/0.1"
+    server_version = "GradientAtlas/0.1"
 
     def log_message(self, fmt: str, *args) -> None:
         print(f"[ui] {self.address_string()} {fmt % args}")
@@ -136,7 +136,7 @@ class AppHandler(BaseHTTPRequestHandler):
                     svg_path = Path(temp) / "artwork.svg"
                     render(surface, config, svg_path)
                     self._send(200, "image/svg+xml; charset=utf-8", svg_path.read_bytes(),
-                               'attachment; filename="dem-optimizer-art.svg"')
+                               'attachment; filename="gradient-atlas.svg"')
                 else:
                     self._json(404, {"error": "Not found"})
         except Exception as exc:
@@ -144,13 +144,13 @@ class AppHandler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Launch the local DEM Optimizer Art interface")
+    parser = argparse.ArgumentParser(description="Launch the local Gradient Atlas interface")
     parser.add_argument("--port", type=int, default=8765)
     parser.add_argument("--no-open", action="store_true")
     args = parser.parse_args()
     address = f"http://127.0.0.1:{args.port}"
     server = ThreadingHTTPServer(("127.0.0.1", args.port), AppHandler)
-    print(f"DEM Optimizer Art UI: {address}")
+    print(f"Gradient Atlas UI: {address}")
     if not args.no_open:
         webbrowser.open(address)
     try:

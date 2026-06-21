@@ -19,7 +19,7 @@ def _preview(svg: Path, png: Path) -> None:
             subprocess.run(["sips", "-s", "format", "png", str(svg), "--out", str(png)], check=True,
                            stdout=subprocess.DEVNULL)
         else:
-            print("PNG skipped; install dem-optimizer-art[preview]. The SVG is complete.")
+            print("PNG skipped; install gradient-atlas[preview]. The SVG is complete.")
 
 
 def main() -> None:

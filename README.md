@@ -1,4 +1,6 @@
-# DEM Optimizer Art
+# Gradient Atlas
+
+**Optimization, mapped.**
 
 Generate print-ready SVG wall art from a real digital elevation model (DEM), with trajectories for SGD, Momentum, NAG, AdaGrad, RMSProp, and Adam.
 
@@ -11,10 +13,10 @@ The terrain becomes the loss function. Every optimizer starts at the same visibl
 Launch the local studio:
 
 ```bash
-uv run dem-art-ui
+uv run gradient-atlas-ui
 ```
 
-Alternatively, inside an activated Python virtual environment: `pip install -e . && dem-art-ui`.
+Alternatively, inside an activated Python virtual environment: `pip install -e . && gradient-atlas-ui`.
 
 It opens at `http://127.0.0.1:8765`. There are three ways to supply terrain:
 
@@ -22,7 +24,7 @@ It opens at `http://127.0.0.1:8765`. There are three ways to supply terrain:
 2. **Coordinates** — enter latitude, longitude, and a 2–200 km coverage radius.
 3. **Upload** — drag in an existing CSV, GeoTIFF, PNG, or JPEG DEM.
 
-The first two options fetch global Terrarium elevation tiles from the public AWS Open Data terrain dataset. Tiles are cached under `~/.cache/dem-optimizer-art/tiles`, so revisiting an area is much faster. Place search runs only when the search button is pressed—not as autocomplete—and is cached and rate-limited in accordance with the public Nominatim usage policy.
+The first two options fetch global Terrarium elevation tiles from the public AWS Open Data terrain dataset. Tiles are cached under `~/.cache/gradient-atlas/tiles`, so revisiting an area is much faster. Place search runs only when the search button is pressed—not as autocomplete—and is cached and rate-limited in accordance with the public Nominatim usage policy.
 
 After choosing terrain, click its normalized preview to place one or more starting points, choose optimizers and colours, then generate SVG or a 2400×3200 PNG.
 
@@ -53,7 +55,7 @@ Python 3.10+ is required. CSV input and SVG output have no third-party dependenc
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e .
-dem-art examples/ngorongoro.json
+gradient-atlas examples/ngorongoro.json
 ```
 
 The SVG appears in `output/`. On macOS a PNG preview is also generated automatically. On other platforms install the preview extra:
@@ -74,7 +76,7 @@ Copy `examples/template.json`, change `title` and `dem`, then render it:
 
 ```bash
 cp examples/template.json examples/my-landscape.json
-dem-art examples/my-landscape.json
+gradient-atlas examples/my-landscape.json
 ```
 
 ## Choosing start points visually
@@ -88,7 +90,7 @@ dem-art examples/my-landscape.json
 Experiment without editing JSON:
 
 ```bash
-dem-art examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.30,0.75
+gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.30,0.75
 ```
 
 ## Configuration
@@ -120,7 +122,7 @@ A custom colour map is simply:
 CLI values override the JSON when supplied:
 
 ```bash
-dem-art examples/yosemite.json --dem data/my-dem.tif --palette magma --steps 35 --output output/custom.svg
+gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --steps 35 --output output/custom.svg
 ```
 
 ## Included examples

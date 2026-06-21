@@ -71,7 +71,7 @@ def _world_pixel(lat: float, lon: float, zoom: int) -> tuple[float, float]:
 
 
 def _tile(z: int, x: int, y: int) -> tuple[int, int, bytes]:
-    cache = Path.home() / ".cache" / "dem-optimizer-art" / "tiles" / str(z) / str(x)
+    cache = Path.home() / ".cache" / "gradient-atlas" / "tiles" / str(z) / str(x)
     path = cache / f"{y}.png"
     if path.exists():
         data = path.read_bytes()

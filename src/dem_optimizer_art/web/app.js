@@ -6,14 +6,38 @@ const palettes = {
   magma: ['#251255','#7b1f70','#d33f5f','#f98e52','#f9e784'],
   mono: ['#13283b','#36566e','#7691a3','#c3ced4']
 };
-let demFile = null, grid = null, starts = [], svgBlob = null, svgUrl = null;
+let demFile = null, baseGrid = null, grid = null, starts = [], svgBlob = null, svgUrl = null;
 let sourceType = 'map', selectedBounds = null, lastBounds = null, selectedPlace = '';
 let naturalVerticalScale = null;
+let rotation = 0, renderTimer = null, terrainTimer = null, terrainController = null;
+let renderInFlight = false, renderPending = false, renderVersion = 0;
 const canvas = $('#terrainCanvas'), largeCanvas = $('#terrainCanvasLarge');
 
 function setStatus(text, error=false) {
   $('#status').textContent = text;
   $('#status').classList.toggle('error', error);
+}
+
+function rotateGrid(source, turns) {
+  let result=source;
+  for(let turn=0;turn<turns;turn++) result=Array.from({length:result[0].length},(_,y)=>Array.from({length:result.length},(_,x)=>result[result.length-1-x][y]));
+  return result;
+}
+
+function rotatePoint(point, turns) {
+  let [u,v]=point;
+  for(let turn=0;turn<turns;turn++) [u,v]=[1-v,u];
+  return [u,v];
+}
+
+function setGrid(source, resetStarts=true) {
+  baseGrid=source;
+  grid=rotateGrid(baseGrid,rotation/90);
+  if(resetStarts) starts=[[.5,.5]];
+  drawTerrain();
+  $('#terrainShell').classList.remove('empty');
+  $('.large-terrain-shell').classList.add('ready');
+  $('#generate').disabled=false;
 }
 
 function paletteColor(t) {
@@ -66,32 +90,38 @@ function drawTerrain() {
 }
 
 function acceptGrid(data, title, message) {
-  grid=data.grid; demFile=null; starts=[]; drawTerrain(); $('#terrainShell').classList.remove('empty');
-  $('.large-terrain-shell').classList.add('ready');
-  $('#generate').disabled=false; if(title) $('#title').value=title.toUpperCase(); setStatus(message);
+  demFile=null;setGrid(data.grid);if(title)$('#title').value=title.toUpperCase();setStatus(message);scheduleRender(120);
 }
 
 async function analyze(file) {
   demFile=file; sourceType='upload'; naturalVerticalScale=null; applyReliefMode(); $('#fileName').textContent=file.name;
   $('#title').value=file.name.replace(/\.[^.]+$/,'').replace(/[-_]+/g,' ').toUpperCase();
   $('#loading').classList.add('show'); $('#terrainShell').classList.remove('empty'); setStatus('Reading and normalizing the DEM…');
+  terrainController?.abort();const controller=new AbortController();terrainController=controller;
   const form=new FormData();form.append('file',file);form.append('smoothing',$('#smoothing').value);form.append('resolution','96');
-  try { const r=await fetch('/api/preview',{method:'POST',body:form}), data=await r.json(); if(!r.ok)throw new Error(data.error);
-    grid=data.grid;starts=[];drawTerrain();$('.large-terrain-shell').classList.add('ready');$('#generate').disabled=false;setStatus('DEM ready. Click the terrain to place a start point.');
-  } catch(e) { grid=null;$('#terrainShell').classList.add('empty');$('.large-terrain-shell').classList.remove('ready');$('#generate').disabled=true;setStatus(e.message,true); }
-  finally { $('#loading').classList.remove('show'); }
+  try { const r=await fetch('/api/preview',{method:'POST',body:form,signal:controller.signal}), data=await r.json(); if(!r.ok)throw new Error(data.error);
+    if(controller!==terrainController)return;setGrid(data.grid);setStatus('DEM ready · drag the centre start point or click to add another.');scheduleRender(120);
+  } catch(e) { if(e.name==='AbortError')return;grid=null;baseGrid=null;$('#terrainShell').classList.add('empty');$('.large-terrain-shell').classList.remove('ready');$('#generate').disabled=true;setStatus(e.message,true); }
+  finally { if(controller===terrainController)$('#loading').classList.remove('show'); }
 }
 
 async function fetchTerrain(bounds, title='') {
   lastBounds=bounds; sourceType='remote'; demFile=null; $('#loading').classList.add('show'); $('#terrainShell').classList.remove('empty');
   setStatus('Fetching and stitching global elevation tiles…');
+  terrainController?.abort();const controller=new AbortController();terrainController=controller;
   try {
-    const r=await fetch('/api/terrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...bounds,smoothing:+$('#smoothing').value,resolution:96})});
+    const r=await fetch('/api/terrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...bounds,smoothing:+$('#smoothing').value,resolution:96}),signal:controller.signal});
     const data=await r.json(); if(!r.ok)throw new Error(data.error);
+    if(controller!==terrainController)return;
     naturalVerticalScale=data.metadata.natural_vertical_scale;applyReliefMode();
     acceptGrid(data,title,`Terrain ready · ${data.metadata.elevation_min}–${data.metadata.elevation_max} m · ${data.metadata.width_km}×${data.metadata.height_km} km · ${data.metadata.tiles} tile(s)`);
-  } catch(e) { if(!grid)$('#terrainShell').classList.add('empty');setStatus(e.message,true); }
-  finally { $('#loading').classList.remove('show'); }
+  } catch(e) { if(e.name==='AbortError')return;if(!grid)$('#terrainShell').classList.add('empty');setStatus(e.message,true); }
+  finally { if(controller===terrainController)$('#loading').classList.remove('show'); }
+}
+
+function boundsObject(bounds) {return{north:bounds.getNorth(),south:bounds.getSouth(),east:bounds.getEast(),west:bounds.getWest()}}
+function scheduleRegionFetch(delay=650) {
+  clearTimeout(terrainTimer);terrainTimer=setTimeout(()=>{if(selectedBounds)fetchTerrain(boundsObject(selectedBounds),selectedPlace||'SELECTED TERRAIN')},delay);
 }
 
 // Source selector
@@ -107,10 +137,10 @@ if (window.L) {
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(terrainMap);
   const drawn=new L.FeatureGroup().addTo(terrainMap);
   terrainMap.addControl(new L.Control.Draw({position:'topright',edit:{featureGroup:drawn,remove:true},draw:{polyline:false,polygon:false,circle:false,circlemarker:false,marker:false,rectangle:{shapeOptions:{color:'#e14b43',weight:2,fillOpacity:.12}}}}));
-  function useLayer(layer) { drawn.clearLayers(); drawn.addLayer(layer); selectedBounds=layer.getBounds(); $('#fetchMap').disabled=false; }
+  function useLayer(layer) { drawn.clearLayers(); drawn.addLayer(layer); selectedBounds=layer.getBounds(); $('#fetchMap').disabled=false;scheduleRegionFetch(); }
   terrainMap.on(L.Draw.Event.CREATED,e=>useLayer(e.layer));
-  terrainMap.on(L.Draw.Event.EDITED,e=>e.layers.eachLayer(layer=>{selectedBounds=layer.getBounds()}));
-  terrainMap.on(L.Draw.Event.DELETED,()=>{selectedBounds=null;$('#fetchMap').disabled=true});
+  terrainMap.on(L.Draw.Event.EDITED,e=>e.layers.eachLayer(layer=>{selectedBounds=layer.getBounds();scheduleRegionFetch()}));
+  terrainMap.on(L.Draw.Event.DELETED,()=>{selectedBounds=null;clearTimeout(terrainTimer);terrainController?.abort();$('#fetchMap').disabled=true});
   window.showPlace=(place)=>{
     selectedPlace=place.name.split(',')[0]; const lat=place.lat,lon=place.lon,dLat=.16,dLon=.16/Math.max(.25,Math.cos(lat*Math.PI/180));
     const layer=L.rectangle([[lat-dLat,lon-dLon],[lat+dLat,lon+dLon]],{color:'#e14b43',weight:2,fillOpacity:.12});useLayer(layer);
@@ -126,7 +156,7 @@ $('#searchPlace').onclick=async()=>{
   } catch(e){box.innerHTML=`<button disabled>${e.message}</button>`}
 };
 $('#placeSearch').addEventListener('keydown',e=>{if(e.key==='Enter')$('#searchPlace').click()});
-$('#fetchMap').onclick=()=>{if(!selectedBounds)return;fetchTerrain({north:selectedBounds.getNorth(),south:selectedBounds.getSouth(),east:selectedBounds.getEast(),west:selectedBounds.getWest()},selectedPlace||'SELECTED TERRAIN')};
+$('#fetchMap').onclick=()=>{if(!selectedBounds)return;clearTimeout(terrainTimer);fetchTerrain(boundsObject(selectedBounds),selectedPlace||'SELECTED TERRAIN')};
 
 // Direct coordinate acquisition
 $('#radius').oninput=e=>$('#radiusOut').textContent=`${e.target.value} km`;
@@ -136,6 +166,8 @@ $('#fetchCoords').onclick=()=>{
   const dLat=radius/111.32,dLon=radius/(111.32*Math.max(.15,Math.cos(lat*Math.PI/180)));
   fetchTerrain({north:lat+dLat,south:lat-dLat,east:lon+dLon,west:lon-dLon},`TERRAIN ${lat.toFixed(3)}, ${lon.toFixed(3)}`);
 };
+let coordinateTimer=null;
+['latitude','longitude','radius'].forEach(id=>$('#'+id).addEventListener('input',()=>{clearTimeout(coordinateTimer);coordinateTimer=setTimeout(()=>$('#fetchCoords').click(),700)}));
 
 // Local upload
 $('#demFile').addEventListener('change',e=>e.target.files[0]&&analyze(e.target.files[0]));
@@ -143,28 +175,43 @@ const dz=$('#dropzone');['dragenter','dragover'].forEach(n=>dz.addEventListener(
 ['dragleave','drop'].forEach(n=>dz.addEventListener(n,e=>{e.preventDefault();dz.classList.remove('drag')}));
 dz.addEventListener('drop',e=>e.dataTransfer.files[0]&&analyze(e.dataTransfer.files[0]));
 
-function addStartFromCanvas(e){if(!grid)return;const r=e.currentTarget.getBoundingClientRect();starts.push([(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]);drawTerrain()}
+function addStartFromCanvas(e){if(!grid)return;const r=e.currentTarget.getBoundingClientRect();starts.push([(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]);drawTerrain();scheduleRender()}
 canvas.addEventListener('click',addStartFromCanvas);largeCanvas.addEventListener('click',addStartFromCanvas);
-$('#undoStart').onclick=()=>{starts.pop();drawTerrain()};$('#clearStarts').onclick=()=>{starts=[];drawTerrain()};
+$('#undoStart').onclick=()=>{starts.pop();drawTerrain();scheduleRender()};$('#clearStarts').onclick=()=>{starts=[];drawTerrain();scheduleRender()};
 $('#largeUndo').onclick=$('#undoStart').onclick;$('#largeClear').onclick=$('#clearStarts').onclick;
 
 $('#expandTerrain').onclick=()=>{const dialog=$('#terrainDialog');dialog.showModal();requestAnimationFrame(drawTerrain)};
 $('#expandArtwork').onclick=()=>{if(!svgUrl)return;$('#largeArtworkTitle').textContent=$('#title').value||'Generated artwork';$('#artDialog').showModal()};
 $$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close).close());
-$('#steps').oninput=e=>$('#stepsOut').value=e.target.value;$('#stepLength').oninput=e=>$('#stepLengthOut').value=`${(+e.target.value).toFixed(2)}×`;$('#palette').onchange=updateStrip;updateStrip();
-$('#reliefMode').onchange=applyReliefMode;$('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode()};applyReliefMode();
-$('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;if(grid&&starts.length){setStatus(`Recalculating ${mode} trajectories…`);$('#generate').click()}else setStatus(`${mode[0].toUpperCase()+mode.slice(1)} selected.`)};
-$('#smoothing').addEventListener('change',()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)});
+$('#steps').oninput=e=>{$('#stepsOut').value=e.target.value;scheduleRender()};
+$('#stepLength').oninput=e=>{$('#stepLengthOut').value=`${(+e.target.value).toFixed(2)}×`;scheduleRender()};
+$('#palette').onchange=()=>{updateStrip();scheduleRender()};updateStrip();
+$('#reliefMode').onchange=()=>{applyReliefMode();scheduleRender()};
+$('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode();scheduleRender()};applyReliefMode();
+$('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;scheduleRender(120)};
+$('#smoothing').addEventListener('change',()=>{clearTimeout(terrainTimer);terrainTimer=setTimeout(()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)},450)});
+$('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((next-rotation)/90+4)%4;rotation=next;starts=starts.map(point=>rotatePoint(point,turns));if(baseGrid)grid=rotateGrid(baseGrid,rotation/90);drawTerrain();scheduleRender(120)};
+['trajectoryStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
+$('#title').addEventListener('input',()=>scheduleRender(500));
+$$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));
 
 function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}
 
-$('#generate').onclick=async()=>{
+function scheduleRender(delay=320) {
+  if(!grid)return;renderVersion++;clearTimeout(renderTimer);
+  if(renderInFlight){renderPending=true;return}
+  const version=renderVersion;renderTimer=setTimeout(()=>renderArtwork(version),delay);
+}
+
+async function renderArtwork(version=++renderVersion){
   if(!grid)return;if(!$$('#optimizers input:checked').length){setStatus('Select at least one optimizer.',true);return}
+  if(renderInFlight){renderPending=true;return}clearTimeout(renderTimer);renderInFlight=true;
   const button=$('#generate');button.disabled=true;button.querySelector('span').textContent='Generating…';setStatus('Projecting terrain and tracing optimizer paths…');
-  const form=new FormData();if(demFile){form.append('file',demFile);form.append('smoothing',$('#smoothing').value);form.append('resolution','96')}else form.append('grid',JSON.stringify(grid));form.append('config',JSON.stringify(config()));
-  try {const r=await fetch('/api/render',{method:'POST',body:form});if(!r.ok){const d=await r.json();throw new Error(d.error)}svgBlob=await r.blob();if(svgUrl)URL.revokeObjectURL(svgUrl);svgUrl=URL.createObjectURL(svgBlob);$('#artPreview').src=svgUrl;$('#artPreviewLarge').src=svgUrl;$('#artShell').classList.remove('empty');$('.large-art-shell').classList.add('ready');$('#downloadSvg').disabled=$('#downloadPng').disabled=$('#expandArtwork').disabled=false;setStatus('Artwork generated. SVG is print-ready and fully editable.')}
-  catch(e){setStatus(e.message,true)}finally{button.disabled=false;button.querySelector('span').textContent=`Generate ${$('#objective').value} artwork`}
-};
+  const form=new FormData();form.append('grid',JSON.stringify(grid));form.append('config',JSON.stringify(config()));
+  try {const r=await fetch('/api/render',{method:'POST',body:form});if(!r.ok){const d=await r.json();throw new Error(d.error)}const blob=await r.blob();if(version!==renderVersion)return;svgBlob=blob;if(svgUrl)URL.revokeObjectURL(svgUrl);svgUrl=URL.createObjectURL(svgBlob);$('#artPreview').src=svgUrl;$('#artPreviewLarge').src=svgUrl;$('#artShell').classList.remove('empty');$('.large-art-shell').classList.add('ready');$('#downloadSvg').disabled=$('#downloadPng').disabled=$('#expandArtwork').disabled=false;setStatus('Artwork updated automatically. SVG is print-ready and fully editable.')}
+  catch(e){setStatus(e.message,true)}finally{renderInFlight=false;button.disabled=false;button.querySelector('span').textContent=`Generate ${$('#objective').value} artwork`;if(renderPending||version!==renderVersion){renderPending=false;const latest=renderVersion;renderTimer=setTimeout(()=>renderArtwork(latest),80)}}
+}
+$('#generate').onclick=()=>{clearTimeout(renderTimer);renderVersion++;renderArtwork(renderVersion)};
 
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function slug(){return($('#title').value||'dem-art').toLowerCase().replace(/[^a-z0-9]+/g,'-')}

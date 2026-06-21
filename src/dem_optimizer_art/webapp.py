@@ -64,7 +64,10 @@ class AppHandler(BaseHTTPRequestHandler):
         if disposition:
             self.send_header("Content-Disposition", disposition)
         self.end_headers()
-        self.wfile.write(data)
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            pass  # The browser cancelled a stale debounced preview request.
 
     def _json(self, status: int, value: dict) -> None:
         self._send(status, "application/json; charset=utf-8", json.dumps(value).encode())

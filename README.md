@@ -28,7 +28,7 @@ After choosing terrain, click its normalized preview to place one or more starti
 
 Both working previews can be expanded: **Expand terrain** opens a near-full-window start-point editor, while **Expand artwork** opens a large inspection view with download controls. The default terrain editor, source map, and artwork panel are also enlarged for desktop displays.
 
-The Generate button stays in the editor header. Switching between descent and ascent automatically regenerates trajectories once a start point has been placed.
+Artwork updates automatically after terrain regions, start points, optimizer settings, colours, relief, or tile rotation change. Updates are debounced and serialized, so rapid slider and map events produce one current render instead of a backlog. The Generate button remains in the editor header for an immediate manual refresh.
 
 Fetched terrain includes geographic dimensions, so relief can use a physical aspect ratio. **Natural aspect** matches elevation range to the selected area's width, **Subtle boost** applies a restrained 1.45× exaggeration, and **Dramatic** applies 3×. Manual mode remains available; uploaded files without geographic metadata use a conservative fallback.
 
@@ -39,7 +39,7 @@ pip install -e ".[images]"   # PNG and JPEG
 pip install -e ".[geotiff]" # GeoTIFF
 ```
 
-Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
+Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
 
 ## Quick start
 

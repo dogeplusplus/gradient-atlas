@@ -30,6 +30,8 @@ Both working previews can be expanded: **Expand terrain** opens a near-full-wind
 
 Artwork updates automatically after terrain regions, start points, optimizer settings, colours, relief, or tile rotation change. Updates are debounced and serialized, so rapid slider and map events produce one current render instead of a backlog. The Generate button remains in the editor header for an immediate manual refresh.
 
+Use **Find high-disagreement starts** to scan the current DEM for one to five spatially separated locations where the selected optimizers naturally produce the most distinct paths. The search respects the current objective, step count, and step length, while penalizing trajectories that simply run into the tile boundary.
+
 Fetched terrain includes geographic dimensions, so relief can use a physical aspect ratio. **Natural aspect** matches elevation range to the selected area's width, **Subtle boost** applies a restrained 1.45× exaggeration, and **Dramatic** applies 3×. Manual mode remains available; uploaded files without geographic metadata use a conservative fallback.
 
 Uploaded DEMs remain entirely on your computer and are processed in a temporary directory. Map and coordinate modes necessarily contact OpenStreetMap/Nominatim for maps and place search, and AWS Open Data for elevation tiles. CSV works without additional packages. For other uploaded formats:

@@ -12,6 +12,7 @@ from urllib.parse import urlparse
 from urllib.parse import parse_qs
 
 from .dem import prepare_surface
+from .optimizers import find_high_disagreement_starts
 from .render import render
 from .terrain_fetch import fetch_surface, search_places
 
@@ -102,6 +103,16 @@ class AppHandler(BaseHTTPRequestHandler):
                                                   int(request.get("resolution", 96)), int(request.get("smoothing", 8)))
                 self._json(200, {"grid": surface.grid, "width": surface.width,
                                  "height": surface.height, "metadata": metadata})
+                return
+            if self.path == "/api/suggest-starts":
+                from .dem import Surface
+                request = json.loads(self.rfile.read(length))
+                starts = find_high_disagreement_starts(
+                    Surface(request["grid"]), request.get("optimizers", []),
+                    int(request.get("steps", 28)), request.get("objective", "descent"),
+                    float(request.get("step_length", 1.0)), int(request.get("count", 3)),
+                )
+                self._json(200, {"starts": starts})
                 return
             fields, upload = parse_multipart(self.headers.get("Content-Type", ""), self.rfile.read(length))
             with tempfile.TemporaryDirectory() as temp:

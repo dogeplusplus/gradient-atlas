@@ -2,7 +2,7 @@ import math
 import unittest
 
 from dem_optimizer_art.dem import Surface, normalize, resample
-from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, run
+from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
 from dem_optimizer_art.render import _clean_trajectory, _direction_chevron, _trajectory_d
 from dem_optimizer_art.webapp import parse_multipart
 from dem_optimizer_art.terrain_fetch import _zoom_for_bbox
@@ -49,6 +49,13 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(cleaned, [(0, 0), (5, 4), (9, 3), (12, 7)])
         self.assertIn(" C ", _trajectory_d(cleaned))
         self.assertTrue(_direction_chevron(cleaned).startswith("M "))
+
+    def test_high_disagreement_starts_are_spatially_distinct(self):
+        surface = Surface(normalize(bowl()))
+        starts = find_high_disagreement_starts(surface, list(OPTIMIZER_COLORS), 18, count=3)
+        self.assertEqual(len(starts), 3)
+        self.assertTrue(all(0.14 <= value <= 0.86 for point in starts for value in point))
+        self.assertTrue(all(math.dist(a, b) >= 0.22 for i, a in enumerate(starts) for b in starts[i + 1:]))
 
     def test_local_ui_multipart_upload(self):
         boundary = "terrain-boundary"

@@ -79,3 +79,56 @@ def run(surface: Surface, name: str, start: tuple[float, float], steps: int,
         x, y = max(-2.95, min(2.95, x)), max(-2.95, min(2.95, y))
         path.append((x, y))
     return path
+
+
+def find_high_disagreement_starts(
+    surface: Surface,
+    methods: list[str],
+    steps: int,
+    objective: str = "descent",
+    step_length: float = 1.0,
+    count: int = 3,
+    candidate_grid: int = 11,
+) -> list[tuple[float, float]]:
+    """Find spatially distinct starts where optimizer paths naturally separate."""
+    methods = [name for name in methods if name in OPTIMIZER_COLORS]
+    if len(methods) < 2:
+        raise ValueError("Select at least two optimizers to measure disagreement")
+    count = max(1, min(6, int(count)))
+    probe_steps = max(6, min(24, int(steps)))
+    scored: list[tuple[float, float, float]] = []
+
+    for row in range(candidate_grid):
+        v = 0.14 + 0.72 * row / (candidate_grid - 1)
+        for column in range(candidate_grid):
+            u = 0.14 + 0.72 * column / (candidate_grid - 1)
+            start = (-3 + 6 * u, -3 + 6 * v)
+            paths = [run(surface, method, start, probe_steps, objective, step_length) for method in methods]
+            sample_indices = [round((probe_steps - 1) * fraction) for fraction in (0.25, 0.5, 0.75, 1.0)]
+            separation = 0.0
+            comparisons = 0
+            for sample_index, weight in zip(sample_indices, (0.35, 0.55, 0.8, 1.0)):
+                for left in range(len(paths)):
+                    for right in range(left + 1, len(paths)):
+                        separation += weight * math.dist(paths[left][sample_index], paths[right][sample_index])
+                        comparisons += 1
+            separation /= comparisons or 1
+            movement = sum(math.dist(start, path[-1]) for path in paths) / len(paths)
+            edge_hits = sum(1 for path in paths if max(abs(path[-1][0]), abs(path[-1][1])) > 2.88)
+            score = separation * (0.65 + 0.35 * min(1.0, movement / 1.2)) * (0.55 ** edge_hits)
+            scored.append((score, u, v))
+
+    scored.sort(reverse=True)
+    selected: list[tuple[float, float]] = []
+    for _, u, v in scored:
+        if all(math.dist((u, v), point) >= 0.22 for point in selected):
+            selected.append((u, v))
+            if len(selected) == count:
+                break
+    if len(selected) < count:
+        for _, u, v in scored:
+            if (u, v) not in selected:
+                selected.append((u, v))
+                if len(selected) == count:
+                    break
+    return selected

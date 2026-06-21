@@ -11,6 +11,7 @@ let sourceType = 'map', selectedBounds = null, lastBounds = null, selectedPlace 
 let naturalVerticalScale = null;
 let rotation = 0, renderTimer = null, terrainTimer = null, terrainController = null;
 let renderInFlight = false, renderPending = false, renderVersion = 0;
+let suggestionController = null, gridVersion = 0;
 const canvas = $('#terrainCanvas'), largeCanvas = $('#terrainCanvasLarge');
 
 function setStatus(text, error=false) {
@@ -31,13 +32,14 @@ function rotatePoint(point, turns) {
 }
 
 function setGrid(source, resetStarts=true) {
-  baseGrid=source;
+  baseGrid=source;gridVersion++;
   grid=rotateGrid(baseGrid,rotation/90);
   if(resetStarts) starts=[[.5,.5]];
   drawTerrain();
   $('#terrainShell').classList.remove('empty');
   $('.large-terrain-shell').classList.add('ready');
   $('#generate').disabled=false;
+  $('#suggestStarts').disabled=false;
 }
 
 function paletteColor(t) {
@@ -101,7 +103,7 @@ async function analyze(file) {
   const form=new FormData();form.append('file',file);form.append('smoothing',$('#smoothing').value);form.append('resolution','96');
   try { const r=await fetch('/api/preview',{method:'POST',body:form,signal:controller.signal}), data=await r.json(); if(!r.ok)throw new Error(data.error);
     if(controller!==terrainController)return;setGrid(data.grid);setStatus('DEM ready · drag the centre start point or click to add another.');scheduleRender(120);
-  } catch(e) { if(e.name==='AbortError')return;grid=null;baseGrid=null;$('#terrainShell').classList.add('empty');$('.large-terrain-shell').classList.remove('ready');$('#generate').disabled=true;setStatus(e.message,true); }
+  } catch(e) { if(e.name==='AbortError')return;grid=null;baseGrid=null;$('#terrainShell').classList.add('empty');$('.large-terrain-shell').classList.remove('ready');$('#generate').disabled=true;$('#suggestStarts').disabled=true;setStatus(e.message,true); }
   finally { if(controller===terrainController)$('#loading').classList.remove('show'); }
 }
 
@@ -180,6 +182,19 @@ canvas.addEventListener('click',addStartFromCanvas);largeCanvas.addEventListener
 $('#undoStart').onclick=()=>{starts.pop();drawTerrain();scheduleRender()};$('#clearStarts').onclick=()=>{starts=[];drawTerrain();scheduleRender()};
 $('#largeUndo').onclick=$('#undoStart').onclick;$('#largeClear').onclick=$('#clearStarts').onclick;
 
+$('#suggestStarts').onclick=async()=>{
+  if(!grid)return;const methods=$$('#optimizers input:checked').map(input=>input.value);
+  if(methods.length<2){setStatus('Select at least two optimizers to find disagreement.',true);return}
+  suggestionController?.abort();const controller=new AbortController();suggestionController=controller;const version=gridVersion;
+  const button=$('#suggestStarts');button.disabled=true;button.textContent='Scanning terrain…';setStatus('Finding starts where optimizer paths diverge most…');
+  try {
+    const response=await fetch('/api/suggest-starts',{method:'POST',headers:{'Content-Type':'application/json'},signal:controller.signal,body:JSON.stringify({grid,optimizers:methods,steps:+$('#steps').value,step_length:+$('#stepLength').value,objective:$('#objective').value,count:+$('#suggestCount').value})});
+    const data=await response.json();if(!response.ok)throw new Error(data.error);if(version!==gridVersion||controller!==suggestionController)return;
+    starts=data.starts;drawTerrain();setStatus(`Placed ${starts.length} high-disagreement start point${starts.length===1?'':'s'}.`);scheduleRender(80);
+  } catch(error){if(error.name!=='AbortError')setStatus(error.message,true)}
+  finally{if(controller===suggestionController){button.disabled=false;button.textContent='Find high-disagreement starts'}}
+};
+
 $('#expandTerrain').onclick=()=>{const dialog=$('#terrainDialog');dialog.showModal();requestAnimationFrame(drawTerrain)};
 $('#expandArtwork').onclick=()=>{if(!svgUrl)return;$('#largeArtworkTitle').textContent=$('#title').value||'Generated artwork';$('#artDialog').showModal()};
 $$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close).close());
@@ -190,7 +205,7 @@ $('#reliefMode').onchange=()=>{applyReliefMode();scheduleRender()};
 $('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode();scheduleRender()};applyReliefMode();
 $('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;scheduleRender(120)};
 $('#smoothing').addEventListener('change',()=>{clearTimeout(terrainTimer);terrainTimer=setTimeout(()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)},450)});
-$('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((next-rotation)/90+4)%4;rotation=next;starts=starts.map(point=>rotatePoint(point,turns));if(baseGrid)grid=rotateGrid(baseGrid,rotation/90);drawTerrain();scheduleRender(120)};
+$('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((next-rotation)/90+4)%4;rotation=next;starts=starts.map(point=>rotatePoint(point,turns));if(baseGrid){grid=rotateGrid(baseGrid,rotation/90);gridVersion++}drawTerrain();scheduleRender(120)};
 ['trajectoryStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
 $('#title').addEventListener('input',()=>scheduleRender(500));
 $$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));

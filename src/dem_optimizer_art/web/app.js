@@ -86,6 +86,25 @@ function applyReliefMode() {
   $('#reliefHint').textContent=labels[mode];
 }
 
+function aspectLabel(width,height) {
+  const ratio=width/height,common=[[1,1],[2,3],[3,4],[4,5],[1,Math.SQRT2],[3,2],[4,3],[5,4]];
+  const match=common.find(([a,b])=>Math.abs(ratio-a/b)<.012);
+  return match?`${match[0]}:${match[1]}`:`${ratio.toFixed(2)}:1`;
+}
+
+function updatePrintHint() {
+  const width=+$('#printWidth').value,height=+$('#printHeight').value;
+  if(!width||!height)return;const format=value=>Number.isInteger(value)?String(value):value.toFixed(2).replace(/0+$/,'').replace(/\.$/,'');
+  $('#printHint').textContent=`${format(width)} × ${format(height)} in · ${aspectLabel(width,height)} ${width>height?'landscape':width===height?'square':'portrait'} · vector SVG`;
+}
+
+function applyPrintPreset() {
+  const value=$('#printPreset').value;if(value==='custom'){updatePrintHint();return}
+  let [width,height]=value.split(',').map(Number);const landscape=$('#printOrientation').value==='landscape';
+  if((landscape&&height>width)||(!landscape&&width>height))[width,height]=[height,width];
+  $('#printWidth').value=width;$('#printHeight').value=height;updatePrintHint();scheduleRender(180);
+}
+
 function drawTerrainCanvas(target) {
   const context=target.getContext('2d'), w=target.width, h=target.height, gh=grid.length, gw=grid[0].length, image=context.createImageData(w,h);
   for (let y=0; y<h; y++) {
@@ -236,11 +255,14 @@ $('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode()
 $('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;scheduleRender(120)};
 $('#smoothing').addEventListener('change',()=>{clearTimeout(terrainTimer);terrainTimer=setTimeout(()=>{if(demFile)analyze(demFile);else if(lastBounds)fetchTerrain(lastBounds,$('#title').value)},450)});
 $('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((next-rotation)/90+4)%4;rotation=next;starts=starts.map(point=>rotatePoint(point,turns));if(baseGrid){grid=rotateGrid(baseGrid,rotation/90);gridVersion++}drawTerrain();scheduleRender(120)};
+$('#printPreset').onchange=applyPrintPreset;
+$('#printOrientation').onchange=()=>{let width=+$('#printWidth').value,height=+$('#printHeight').value;const landscape=$('#printOrientation').value==='landscape';if((landscape&&height>width)||(!landscape&&width>height)){[$('#printWidth').value,$('#printHeight').value]=[height,width]}updatePrintHint();scheduleRender(180)};
+['printWidth','printHeight'].forEach(id=>$('#'+id).addEventListener('input',()=>{$('#printPreset').value='custom';updatePrintHint();scheduleRender()}));
 ['trajectoryStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
 $('#title').addEventListener('input',()=>scheduleRender(500));
 $$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));
 
-function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90,surface_bottom:1185}}
+function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,print_width:+$('#printWidth').value,print_height:+$('#printHeight').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90}}
 
 function scheduleRender(delay=320) {
   if(!grid)return;renderVersion++;clearTimeout(renderTimer);
@@ -261,5 +283,5 @@ $('#generate').onclick=()=>{clearTimeout(renderTimer);renderVersion++;renderArtw
 function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function slug(){return($('#title').value||'dem-art').toLowerCase().replace(/[^a-z0-9]+/g,'-')}
 $('#downloadSvg').onclick=()=>svgBlob&&download(svgBlob,`${slug()}.svg`);
-$('#downloadPng').onclick=()=>{if(!svgUrl)return;const img=new Image();img.onload=()=>{const c=document.createElement('canvas');c.width=2400;c.height=3200;c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>download(b,`${slug()}.png`),'image/png')};img.src=svgUrl};
+$('#downloadPng').onclick=()=>{if(!svgUrl)return;const img=new Image();img.onload=()=>{const dpi=200,maxPixels=40_000_000,width=+$('#printWidth').value,height=+$('#printHeight').value;let pixelWidth=Math.round(width*dpi),pixelHeight=Math.round(height*dpi);const scale=Math.min(1,Math.sqrt(maxPixels/(pixelWidth*pixelHeight)));pixelWidth=Math.round(pixelWidth*scale);pixelHeight=Math.round(pixelHeight*scale);const c=document.createElement('canvas');c.width=pixelWidth;c.height=pixelHeight;c.getContext('2d').drawImage(img,0,0,c.width,c.height);c.toBlob(b=>download(b,`${slug()}-${width}x${height}in.png`),'image/png')};img.src=svgUrl};
 $('#largeDownloadSvg').onclick=$('#downloadSvg').onclick;$('#largeDownloadPng').onclick=$('#downloadPng').onclick;

@@ -14,6 +14,8 @@ The terrain becomes the loss function. At each visible start point, every select
 
 ## Visual interface
 
+![Gradient Atlas web interface](docs/gradient-atlas-web-ui.png)
+
 Launch the local studio:
 
 ```bash
@@ -50,6 +52,10 @@ pip install -e ".[geotiff]" # GeoTIFF
 ```
 
 Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
+
+### Print sizes and aspect ratios
+
+Choose standard 4:5, 3:4, 2:3, square, A4, A3, or A2 formats, then switch between portrait and landscape. Custom dimensions from 4–60 inches are also supported. The composition reflows around the selected page rather than stretching the terrain, and exported SVG files include physical dimensions for print workflows. PNG export follows the chosen ratio at up to 200 DPI, capped at 40 megapixels to keep browser memory use reasonable.
 
 ## Quick start
 
@@ -106,6 +112,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `steps` | Number of updates per optimizer |
 | `step_length` | Multiplier applied to each optimizer's default learning rate |
 | `trajectory_style` | `flowing` (layered spline, markers, arrow), `technical` (raw steps), or `minimal` |
+| `print_width` / `print_height` | Physical output dimensions in inches; supports portrait, landscape, and square formats |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |
 | `optimizers` | Any subset of `SGD`, `Momentum`, `NAG`, `AdaGrad`, `RMSProp`, `Adam` |
 | `palette` | `spectrum`, `ocean`, `magma`, `mono`, or a JSON list of hex colours |
@@ -113,7 +120,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `grid_lines` | Coloured wire density |
 | `vertical_scale` | Visual height exaggeration |
 | `auto_fit` | Measure and fit each surface into the available vertical poster area |
-| `surface_top` / `surface_bottom` | Vertical bounds used by automatic framing |
+| `surface_top` / `surface_bottom` | Vertical framing bounds; with print dimensions, the lower bound is derived from the page aspect |
 | `fill_opacity` | Transparent colour wash beneath the wireframe |
 | `png_preview` | Also create a PNG when a converter is available |
 
@@ -126,7 +133,7 @@ A custom colour map is simply:
 CLI values override the JSON when supplied:
 
 ```bash
-gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --steps 35 --output output/custom.svg
+gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --steps 35 --size 20x30 --output output/custom.svg
 ```
 
 ## Included examples

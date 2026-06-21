@@ -29,26 +29,28 @@ def _colour(z: float, palette: tuple[str, ...]) -> str:
     return _mix(palette[i], palette[i + 1], scaled - i)
 
 
-def _project(x: float, y: float, z: float, vertical_scale: float) -> tuple[float, float]:
-    return 600 + 110.2 * (x - y), 740 + 45 * (x + y) - 150 * vertical_scale * z
+def _project(x: float, y: float, z: float, vertical_scale: float,
+             page_width: int = W) -> tuple[float, float]:
+    horizontal_scale = page_width / W
+    return page_width / 2 + 110.2 * horizontal_scale * (x - y), 740 + 45 * (x + y) - 150 * vertical_scale * z
 
 
 def _projector(surface: Surface, vertical_scale: float, auto_fit: bool,
-               top: float, bottom: float):
+               top: float, bottom: float, page_width: int = W):
     """Create a projection fitted vertically to the surface's actual coverage."""
     if not auto_fit:
-        return lambda x, y, z: _project(x, y, z, vertical_scale)
+        return lambda x, y, z: _project(x, y, z, vertical_scale, page_width)
     ys = []
     for j in range(49):
         y = -3 + 6 * j / 48
         for i in range(49):
             x = -3 + 6 * i / 48
-            ys.append(_project(x, y, surface.value(x, y), vertical_scale)[1])
+            ys.append(_project(x, y, surface.value(x, y), vertical_scale, page_width)[1])
     low, high = min(ys), max(ys)
     scale = (bottom - top) / (high - low or 1)
 
     def fitted(x: float, y: float, z: float) -> tuple[float, float]:
-        px, py = _project(x, y, z, vertical_scale)
+        px, py = _project(x, y, z, vertical_scale, page_width)
         return px, top + (py - low) * scale
 
     return fitted
@@ -111,6 +113,16 @@ def _direction_chevron(points: list[tuple[float, float]]) -> str:
 
 
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
+    print_width = float(config.get("print_width", 12.0))
+    print_height = float(config.get("print_height", 16.0))
+    if not (4 <= print_width <= 60 and 4 <= print_height <= 60):
+        raise ValueError("Print width and height must be between 4 and 60 inches")
+    if not 0.5 <= print_width / print_height <= 2.0:
+        raise ValueError("Print aspect ratio must be between 1:2 and 2:1")
+    if print_height >= print_width:
+        page_width, page_height = W, round(W * print_height / print_width)
+    else:
+        page_height, page_width = 1200, round(1200 * print_width / print_height)
     title = config.get("title", "UNTITLED DEM").upper()
     steps = int(config.get("steps", 22))
     step_length = float(config.get("step_length", 1.0))
@@ -125,11 +137,13 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     equations = equation_lines(objective)
     starts_uv = config.get("start_points", [[0.62, 0.42]])
     starts = [(-3 + 6 * float(u), -3 + 6 * float(v)) for u, v in starts_uv]
+    has_print_size = "print_width" in config or "print_height" in config
+    surface_bottom = page_height - 415 if has_print_size else float(config.get("surface_bottom", 1185))
     project = _projector(surface, vertical_scale, bool(config.get("auto_fit", True)),
-                         float(config.get("surface_top", 90)), float(config.get("surface_bottom", 1185)))
+                         float(config.get("surface_top", 90)), surface_bottom, page_width)
 
-    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}">',
-           f'<rect width="{W}" height="{H}" fill="{PAPER}"/>',
+    svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {page_width} {page_height}" width="{print_width:g}in" height="{print_height:g}in">',
+           f'<rect width="{page_width}" height="{page_height}" fill="{PAPER}"/>',
            '<g fill="none" stroke-linecap="round" stroke-linejoin="round">']
 
     resolution = 68
@@ -209,23 +223,25 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     svg.append('</g>')
 
     # A crisp DEM title with a quiet six-pen rule—colour without faux blur.
-    title_size = min(60, max(42, 980 / max(1, len(title) * 0.62)))
-    svg.append(f'<text x="72" y="1248" fill="{INK}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
+    title_y = page_height - 352
+    title_size = min(60, max(42, (page_width - 220) / max(1, len(title) * 0.62)))
+    svg.append(f'<text x="72" y="{title_y}" fill="{INK}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
     segment_width = 66
     for i, method in enumerate(methods):
         x1 = 75 + i * segment_width
-        svg.append(f'<line x1="{x1}" y1="1270" x2="{x1 + segment_width - 8}" y2="1270" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
-    svg.append(f'<text x="75" y="1305" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH · {len(starts)} START POINT(S)</text>')
-    svg.append(f'<line x1="75" y1="1328" x2="1125" y2="1328" stroke="{INK}" opacity="0.35"/>')
-    positions = [(75, 1356), (75, 1410), (75, 1464), (625, 1356), (625, 1410), (625, 1464)]
+        svg.append(f'<line x1="{x1}" y1="{page_height - 330}" x2="{x1 + segment_width - 8}" y2="{page_height - 330}" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
+    svg.append(f'<text x="75" y="{page_height - 295}" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH · {len(starts)} START POINT(S) · {print_width:g}×{print_height:g} IN</text>')
+    svg.append(f'<line x1="75" y1="{page_height - 272}" x2="{page_width - 75}" y2="{page_height - 272}" stroke="{INK}" opacity="0.35"/>')
+    positions = [(75, page_height - 244), (75, page_height - 190), (75, page_height - 136),
+                 (page_width / 2 + 25, page_height - 244), (page_width / 2 + 25, page_height - 190), (page_width / 2 + 25, page_height - 136)]
     for method, (x, y) in zip(methods, positions):
         c = OPTIMIZER_COLORS[method]
         svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 28}" y2="{y - 5}" stroke="{c}" stroke-width="5"/>')
         svg.append(f'<text x="{x + 38}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="14">{method.upper()}</text>')
         for line_index, equation in enumerate(equations[method]):
             svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{INK}" font-family="monospace" font-size="11.8">{equation}</text>')
-    svg.extend([f'<line x1="75" y1="1512" x2="1125" y2="1512" stroke="{INK}" opacity="0.35"/>',
-                f'<text x="75" y="1545" fill="{INK}" opacity="0.58" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
+    svg.extend([f'<line x1="75" y1="{page_height - 88}" x2="{page_width - 75}" y2="{page_height - 88}" stroke="{INK}" opacity="0.35"/>',
+                f'<text x="75" y="{page_height - 55}" fill="{INK}" opacity="0.58" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg), encoding="utf-8")

@@ -1,9 +1,11 @@
 import math
+import tempfile
 import unittest
+from pathlib import Path
 
 from dem_optimizer_art.dem import Surface, normalize, resample
 from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
-from dem_optimizer_art.render import _clean_trajectory, _direction_chevron, _trajectory_d
+from dem_optimizer_art.render import _clean_trajectory, _direction_chevron, _trajectory_d, render
 from dem_optimizer_art.webapp import parse_multipart
 from dem_optimizer_art.terrain_fetch import _zoom_for_bbox
 
@@ -49,6 +51,17 @@ class CoreTests(unittest.TestCase):
         self.assertEqual(cleaned, [(0, 0), (5, 4), (9, 3), (12, 7)])
         self.assertIn(" C ", _trajectory_d(cleaned))
         self.assertTrue(_direction_chevron(cleaned).startswith("M "))
+
+    def test_render_uses_physical_print_size_and_aspect(self):
+        surface = Surface(normalize(bowl()))
+        with tempfile.TemporaryDirectory() as temp:
+            for width, height, viewbox in ((20, 30, "0 0 1200 1800"), (24, 18, "0 0 1600 1200")):
+                target = Path(temp) / f"{width}x{height}.svg"
+                render(surface, {"print_width": width, "print_height": height,
+                                 "grid_lines": 3, "steps": 2, "optimizers": ["SGD"]}, target)
+                svg = target.read_text(encoding="utf-8")
+                self.assertIn(f'viewBox="{viewbox}"', svg)
+                self.assertIn(f'width="{width}in" height="{height}in"', svg)
 
     def test_high_disagreement_starts_are_spatially_distinct(self):
         surface = Surface(normalize(bowl()))

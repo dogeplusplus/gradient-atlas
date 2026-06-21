@@ -86,6 +86,22 @@
         <label>Trajectory treatment
           <select id="trajectoryStyle"><option value="flowing" selected>Flowing ink — recommended</option><option value="technical">Technical steps</option><option value="minimal">Minimal line</option></select>
         </label>
+        <label>Print size
+          <select id="printPreset">
+            <option value="8,10">8 × 10 in · 4:5</option><option value="12,16" selected>12 × 16 in · 3:4</option>
+            <option value="12,18">12 × 18 in · 2:3</option><option value="16,20">16 × 20 in · 4:5</option>
+            <option value="18,24">18 × 24 in · 3:4</option><option value="20,30">20 × 30 in · 2:3</option>
+            <option value="24,36">24 × 36 in · 2:3</option><option value="8.27,11.69">A4 · 210 × 297 mm</option>
+            <option value="11.69,16.54">A3 · 297 × 420 mm</option><option value="16.54,23.39">A2 · 420 × 594 mm</option>
+            <option value="12,12">12 × 12 in · square</option><option value="custom">Custom dimensions</option>
+          </select>
+        </label>
+        <div class="two-col print-options">
+          <label>Orientation<select id="printOrientation"><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select></label>
+          <label>Width · inches<input id="printWidth" type="number" min="4" max="60" step="0.01" value="12"></label>
+          <label>Height · inches<input id="printHeight" type="number" min="4" max="60" step="0.01" value="16"></label>
+        </div>
+        <p id="printHint" class="source-hint">12 × 16 in · 3:4 portrait · vector SVG</p>
         <div class="palette-strip" id="paletteStrip"></div>
         <div class="two-col">
           <label>Line density<input id="lines" type="number" min="25" max="120" value="75"></label>

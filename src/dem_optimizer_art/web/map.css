@@ -10,3 +10,4 @@
 .leaflet-container{font-family:Inter,Avenir Next,Helvetica,Arial,sans-serif}.leaflet-control-attribution{font-size:7px!important}
 #terrainCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
 .start-suggest{display:grid;grid-template-columns:92px 1fr;gap:8px;align-items:end;margin-top:14px}.start-suggest select{margin-top:5px}.start-suggest .fetch{height:37px}
+.preset-label{margin-bottom:5px!important}.preset-label select{margin-top:5px}.preset-hint{margin:0 1px 9px}

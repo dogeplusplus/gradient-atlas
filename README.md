@@ -32,6 +32,8 @@ Artwork updates automatically after terrain regions, start points, optimizer set
 
 Use **Find high-disagreement starts** to scan the current DEM for one to five spatially separated locations where the selected optimizers naturally produce the most distinct paths. The search respects the current objective, step count, and step length, while penalizing trajectories that simply run into the tile boundary.
 
+The **Featured terrain** menu includes 20 famous landscapes selected for optimizer-friendly elevation geometry: calderas, breached volcanoes, branching canyons, glacial valleys, pyramidal peaks, and multi-ridge massifs. Each preset supplies a tuned centre and coverage radius, then fetches and renders automatically.
+
 Fetched terrain includes geographic dimensions, so relief can use a physical aspect ratio. **Natural aspect** matches elevation range to the selected area's width, **Subtle boost** applies a restrained 1.45× exaggeration, and **Dramatic** applies 3×. Manual mode remains available; uploaded files without geographic metadata use a conservative fallback.
 
 Uploaded DEMs remain entirely on your computer and are processed in a temporary directory. Map and coordinate modes necessarily contact OpenStreetMap/Nominatim for maps and place search, and AWS Open Data for elevation tiles. CSV works without additional packages. For other uploaded formats:

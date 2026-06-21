@@ -6,6 +6,28 @@ const palettes = {
   magma: ['#251255','#7b1f70','#d33f5f','#f98e52','#f9e784'],
   mono: ['#13283b','#36566e','#7691a3','#c3ced4']
 };
+const terrainPresets = [
+  {name:'Ngorongoro Crater',lat:-2.687,lon:35.584,radius:18,why:'Near-circular caldera rim surrounding a broad interior basin.'},
+  {name:'Bromo–Tengger–Semeru',lat:-7.9425,lon:112.953,radius:22,why:'Nested caldera, volcanic cones, and strongly competing valleys.'},
+  {name:'Mount Rinjani',lat:-8.411,lon:116.457,radius:20,why:'Crater lake, asymmetric rim, and a steep volcanic cone.'},
+  {name:'Tongariro Volcanic Complex',lat:-39.1573,lon:175.632,radius:22,why:'Several neighbouring cones, saddles, craters, and drainage basins.'},
+  {name:'Haleakalā',lat:20.7097,lon:-156.2533,radius:25,why:'A vast eroded summit depression cut by deep radial valleys.'},
+  {name:'Crater Lake · Mount Mazama',lat:42.9446,lon:-122.109,radius:18,why:'A clean caldera ring with islands, rim peaks, and outer gullies.'},
+  {name:'Mount St Helens',lat:46.1912,lon:-122.1944,radius:18,why:'Breached crater geometry creates a dramatic directional surface.'},
+  {name:'Mount Etna',lat:37.751,lon:14.9934,radius:22,why:'Broad cone patterned with summit craters and radial erosion.'},
+  {name:'Teide · Tenerife',lat:28.2724,lon:-16.6425,radius:24,why:'Central cone rising from the complex Las Cañadas caldera.'},
+  {name:'Mount Fuji',lat:35.3606,lon:138.7274,radius:24,why:'Near-symmetric cone for clean, controlled trajectory comparisons.'},
+  {name:'Yosemite Valley',lat:37.745,lon:-119.59,radius:22,why:'Deep glacial trough, sheer walls, domes, and tributary valleys.'},
+  {name:'Grand Canyon',lat:36.1069,lon:-112.1129,radius:32,why:'Branching ravines and layered plateaus produce rich local structure.'},
+  {name:'Bryce Canyon',lat:37.6283,lon:-112.1677,radius:18,why:'Scalloped amphitheatres divided by ridges and narrow drainages.'},
+  {name:'Matterhorn · Zermatt',lat:45.9763,lon:7.6586,radius:18,why:'Pyramidal peak surrounded by glacial valleys and sharp cols.'},
+  {name:'Aoraki · Mount Cook',lat:-43.595,lon:170.1418,radius:28,why:'Interlocking alpine ridges, glaciers, and deep troughs.'},
+  {name:'Torres del Paine',lat:-50.9423,lon:-73.4068,radius:30,why:'Granite towers, cirques, lakes, and strongly separated valleys.'},
+  {name:'Denali',lat:63.0695,lon:-151.0074,radius:35,why:'Huge multi-ridge massif with long glacial drainage systems.'},
+  {name:'Machu Picchu · Urubamba',lat:-13.1631,lon:-72.545,radius:20,why:'A tight river meander enclosed by steep, intersecting ridges.'},
+  {name:'Yr Wyddfa · Snowdon',lat:53.0685,lon:-4.0763,radius:15,why:'Compact glacial cwms and radiating ridgelines at poster-friendly scale.'},
+  {name:'Mount Kilimanjaro',lat:-3.0674,lon:37.3556,radius:30,why:'Isolated massif with multiple summits and broad radial drainage.'}
+];
 let demFile = null, baseGrid = null, grid = null, starts = [], svgBlob = null, svgUrl = null;
 let sourceType = 'map', selectedBounds = null, lastBounds = null, selectedPlace = '';
 let naturalVerticalScale = null;
@@ -147,6 +169,14 @@ if (window.L) {
     selectedPlace=place.name.split(',')[0]; const lat=place.lat,lon=place.lon,dLat=.16,dLon=.16/Math.max(.25,Math.cos(lat*Math.PI/180));
     const layer=L.rectangle([[lat-dLat,lon-dLon],[lat+dLat,lon+dLon]],{color:'#e14b43',weight:2,fillOpacity:.12});useLayer(layer);
     terrainMap.fitBounds(layer.getBounds(),{padding:[12,12]});$('#searchResults').classList.remove('show');$('#title').value=selectedPlace.toUpperCase();
+  };
+  terrainPresets.forEach((preset,index)=>{const option=document.createElement('option');option.value=String(index);option.textContent=preset.name;$('#terrainPreset').appendChild(option)});
+  $('#terrainPreset').onchange=()=>{
+    if($('#terrainPreset').value==='')return;const preset=terrainPresets[+$('#terrainPreset').value];
+    selectedPlace=preset.name;$('#title').value=preset.name.toUpperCase();$('#latitude').value=preset.lat;$('#longitude').value=preset.lon;$('#radius').value=preset.radius;$('#radiusOut').textContent=`${preset.radius} km`;$('#presetHint').textContent=preset.why;
+    const dLat=preset.radius/111.32,dLon=preset.radius/(111.32*Math.max(.15,Math.cos(preset.lat*Math.PI/180)));
+    const layer=L.rectangle([[preset.lat-dLat,preset.lon-dLon],[preset.lat+dLat,preset.lon+dLon]],{color:'#e14b43',weight:2,fillOpacity:.12});
+    useLayer(layer);terrainMap.fitBounds(layer.getBounds(),{padding:[12,12]});
   };
 }
 

@@ -3,6 +3,7 @@ import unittest
 
 from dem_optimizer_art.dem import Surface, normalize, resample
 from dem_optimizer_art.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, run
+from dem_optimizer_art.render import _clean_trajectory, _direction_chevron, _trajectory_d
 from dem_optimizer_art.webapp import parse_multipart
 from dem_optimizer_art.terrain_fetch import _zoom_for_bbox
 
@@ -41,6 +42,13 @@ class CoreTests(unittest.TestCase):
         short = run(surface, "SGD", start, 1, step_length=0.5)[-1]
         long = run(surface, "SGD", start, 1, step_length=1.5)[-1]
         self.assertGreater(math.dist(start, long), math.dist(start, short))
+
+    def test_wall_art_trajectory_treatment(self):
+        points = [(0, 0), (0.2, 0.2), (5, 4), (9, 3), (12, 7)]
+        cleaned = _clean_trajectory(points)
+        self.assertEqual(cleaned, [(0, 0), (5, 4), (9, 3), (12, 7)])
+        self.assertIn(" C ", _trajectory_d(cleaned))
+        self.assertTrue(_direction_chevron(cleaned).startswith("M "))
 
     def test_local_ui_multipart_upload(self):
         boundary = "terrain-boundary"

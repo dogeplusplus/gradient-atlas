@@ -39,7 +39,7 @@ pip install -e ".[images]"   # PNG and JPEG
 pip install -e ".[geotiff]" # GeoTIFF
 ```
 
-Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. The CLI remains available for repeatable or automated rendering.
+Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
 
 ## Quick start
 
@@ -95,6 +95,7 @@ dem-art examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.30,0.75
 | `dem` | CSV, GeoTIFF, PNG, or JPEG elevation grid |
 | `steps` | Number of updates per optimizer |
 | `step_length` | Multiplier applied to each optimizer's default learning rate |
+| `trajectory_style` | `flowing` (layered spline, markers, arrow), `technical` (raw steps), or `minimal` |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |
 | `optimizers` | Any subset of `SGD`, `Momentum`, `NAG`, `AdaGrad`, `RMSProp`, `Adam` |
 | `palette` | `spectrum`, `ocean`, `magma`, `mono`, or a JSON list of hex colours |

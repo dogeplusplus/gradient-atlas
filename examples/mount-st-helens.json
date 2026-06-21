@@ -3,12 +3,18 @@
   "dem": "../data/mount_st_helens_elevation.csv",
   "output": "../output/mount-st-helens.svg",
   "steps": 24,
-  "start_points": [[0.58, 0.56]],
+  "objective": "descent",
+  "step_length": 0.9,
+  "trajectory_style": "flowing",
+  "start_points": [[0.500, 0.500], [0.788, 0.284]],
+  "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
   "palette": "magma",
   "smoothing": 8,
   "grid_lines": 75,
   "vertical_scale": 0.95,
+  "auto_fit": true,
+  "surface_top": 90,
+  "surface_bottom": 1185,
   "fill_opacity": 0.08,
   "png_preview": true
 }
-

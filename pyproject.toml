@@ -7,7 +7,7 @@ name = "gradient-atlas"
 version = "0.1.0"
 description = "Turn digital elevation models into optimizer trajectory wall art"
 requires-python = ">=3.10"
-license = {text = "MIT"}
+license = "MIT"
 authors = [{name = "Gradient Atlas contributors"}]
 dependencies = []
 

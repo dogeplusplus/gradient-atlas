@@ -6,7 +6,11 @@ Generate print-ready SVG wall art from a real digital elevation model (DEM), wit
 
 Choose **Descent** to minimize elevation and reach a valley, or **Ascent** to maximize elevation and climb toward a peak. Every optimizer and displayed equation switches direction consistently.
 
-The terrain becomes the loss function. Every optimizer starts at the same visible point and follows the measured surface toward a basin. The poster title is the DEM name, and the legend equations exactly match the implemented update rules.
+The terrain becomes the loss function. At each visible start point, every selected optimizer follows the same measured surface toward a basin or peak. The poster title is the DEM name, and the legend equations exactly match the implemented update rules.
+
+![Gradient Atlas rendering of optimizer trajectories descending into Ngorongoro Crater](docs/gradient-atlas-ngorongoro.png)
+
+*Ngorongoro Crater with three altitude-constrained, high-disagreement start points.*
 
 ## Visual interface
 
@@ -127,9 +131,10 @@ gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --st
 
 ## Included examples
 
-- Ngorongoro Crater: broad, smooth basin and clean optimizer separation.
-- Mount St Helens: stronger momentum and NAG overshoot.
-- Yosemite Valley: elongated valley with multiple starting points.
+- **Ngorongoro Crater** — descent from three high rim locations into a broad caldera basin.
+- **Mount St Helens** — descent from two elevated starts, emphasizing momentum and NAG overshoot around the breached crater.
+- **Yosemite Valley** — ascent from two low valley locations toward competing granite walls and ridges.
+- **Template** — a complete baseline configuration for your own DEM.
 
 The sample CSV grids are smoothed approximations derived from public terrain elevation tiles. Keep appropriate source attribution when publishing derived artwork.
 

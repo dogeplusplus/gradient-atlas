@@ -3,14 +3,19 @@
   "dem": "../data/ngorongoro_elevation.csv",
   "output": "../output/ngorongoro.svg",
   "steps": 28,
-  "start_points": [[0.64, 0.41]],
+  "objective": "descent",
+  "step_length": 1.0,
+  "trajectory_style": "flowing",
+  "start_points": [[0.572, 0.140], [0.860, 0.428], [0.788, 0.212]],
   "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
   "palette": "spectrum",
   "smoothing": 8,
   "dem_resolution": 96,
   "grid_lines": 75,
   "vertical_scale": 1.0,
+  "auto_fit": true,
+  "surface_top": 90,
+  "surface_bottom": 1185,
   "fill_opacity": 0.10,
   "png_preview": true
 }
-

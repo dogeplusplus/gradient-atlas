@@ -3,12 +3,18 @@
   "dem": "../data/yosemite_valley_elevation.csv",
   "output": "../output/yosemite.svg",
   "steps": 30,
-  "start_points": [[0.62, 0.39], [0.78, 0.56]],
+  "objective": "ascent",
+  "step_length": 0.85,
+  "trajectory_style": "flowing",
+  "start_points": [[0.428, 0.572], [0.140, 0.428]],
+  "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
   "palette": "ocean",
   "smoothing": 10,
   "grid_lines": 80,
   "vertical_scale": 0.90,
+  "auto_fit": true,
+  "surface_top": 90,
+  "surface_bottom": 1185,
   "fill_opacity": 0.08,
   "png_preview": true
 }
-

@@ -4,6 +4,8 @@
   "output": "../output/your-art.svg",
   "steps": 28,
   "objective": "descent",
+  "step_length": 1.0,
+  "trajectory_style": "flowing",
   "start_points": [[0.65, 0.40]],
   "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
   "palette": "spectrum",

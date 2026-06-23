@@ -51,7 +51,7 @@ pip install -e ".[images]"   # PNG and JPEG
 pip install -e ".[geotiff]" # GeoTIFF
 ```
 
-Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and four palettes. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
+Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and dark-mode-friendly palettes such as `aurora`, `ember`, `twilight`, `topo`, and `glacier`. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The CLI remains available for repeatable or automated rendering.
 
 ### Print sizes and aspect ratios
 
@@ -116,7 +116,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `print_width` / `print_height` | Physical output dimensions in inches; supports portrait, landscape, and square formats |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |
 | `optimizers` | Any subset of `SGD`, `Momentum`, `NAG`, `AdaGrad`, `RMSProp`, `Adam` |
-| `palette` | `spectrum`, `ocean`, `magma`, `mono`, or a JSON list of hex colours |
+| `palette` | `spectrum`, `aurora`, `ember`, `twilight`, `topo`, `glacier`, `ocean`, `magma`, `mono`, or a JSON list of hex colours |
 | `smoothing` | Low-pass passes; `6–12` works well for noisy real terrain |
 | `grid_lines` | Coloured wire density |
 | `vertical_scale` | Visual height exaggeration |

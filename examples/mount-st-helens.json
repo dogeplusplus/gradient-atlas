@@ -11,7 +11,7 @@
   "print_height": 24,
   "start_points": [[0.500, 0.500], [0.788, 0.284]],
   "optimizers": ["SGD", "Momentum", "NAG", "AdaGrad", "RMSProp", "Adam"],
-  "palette": "magma",
+  "palette": "ember",
   "smoothing": 8,
   "grid_lines": 75,
   "vertical_scale": 0.95,

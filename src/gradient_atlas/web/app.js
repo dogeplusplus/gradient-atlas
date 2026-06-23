@@ -4,7 +4,12 @@ const palettes = {
   spectrum: ['#3326a8','#126de0','#00c5cf','#56dc75','#f5e94b','#ff8a2b','#e9364f'],
   ocean: ['#152a5b','#175d8d','#2ca6a4','#a7d46f','#f2d15c'],
   magma: ['#251255','#7b1f70','#d33f5f','#f98e52','#f9e784'],
-  mono: ['#13283b','#36566e','#7691a3','#c3ced4']
+  mono: ['#13283b','#36566e','#7691a3','#c3ced4'],
+  aurora: ['#102039','#244c95','#18a7c9','#65f3b5','#f7ff9b'],
+  ember: ['#1c1028','#5f1f62','#c22f5d','#ff7a3d','#ffe08a'],
+  twilight: ['#111827','#263a8b','#6b49c8','#d45fa3','#ffd6a5'],
+  topo: ['#092a36','#0f6f73','#7bc96f','#f4d35e','#f76f53'],
+  glacier: ['#081923','#123c69','#2c7da0','#8edce6','#f0fbff']
 };
 const terrainPresets = [
   {name:'Ngorongoro Crater',lat:-2.687,lon:35.584,radius:18,why:'Near-circular caldera rim surrounding a broad interior basin.'},

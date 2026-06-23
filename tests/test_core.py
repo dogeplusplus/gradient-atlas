@@ -5,7 +5,7 @@ from pathlib import Path
 
 from gradient_atlas.dem import Surface, normalize, resample
 from gradient_atlas.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
-from gradient_atlas.render import _clean_trajectory, _direction_chevron, _trajectory_d, render
+from gradient_atlas.render import PALETTES, _clean_trajectory, _direction_chevron, _trajectory_d, render
 from gradient_atlas.webapp import parse_multipart
 from gradient_atlas.terrain_fetch import _zoom_for_bbox
 
@@ -71,6 +71,12 @@ class CoreTests(unittest.TestCase):
             svg = target.read_text(encoding="utf-8")
             self.assertIn('fill="#071019"', svg)
             self.assertIn('fill="#edf8ff"', svg)
+
+    def test_dark_friendly_palettes_are_available(self):
+        for name in ("aurora", "ember", "twilight", "topo", "glacier"):
+            with self.subTest(palette=name):
+                self.assertIn(name, PALETTES)
+                self.assertGreaterEqual(len(PALETTES[name]), 5)
 
     def test_high_disagreement_starts_are_spatially_distinct(self):
         surface = Surface(normalize(bowl()))

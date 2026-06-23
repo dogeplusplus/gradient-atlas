@@ -230,7 +230,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for i, method in enumerate(methods):
         x1 = 75 + i * segment_width
         svg.append(f'<line x1="{x1}" y1="{page_height - 330}" x2="{x1 + segment_width - 8}" y2="{page_height - 330}" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
-    svg.append(f'<text x="75" y="{page_height - 295}" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH · {len(starts)} START POINT(S) · {print_width:g}×{print_height:g} IN</text>')
+    svg.append(f'<text x="75" y="{page_height - 295}" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH  </text>')
     svg.append(f'<line x1="75" y1="{page_height - 272}" x2="{page_width - 75}" y2="{page_height - 272}" stroke="{INK}" opacity="0.35"/>')
     positions = [(75, page_height - 244), (75, page_height - 190), (75, page_height - 136),
                  (page_width / 2 + 25, page_height - 244), (page_width / 2 + 25, page_height - 190), (page_width / 2 + 25, page_height - 136)]

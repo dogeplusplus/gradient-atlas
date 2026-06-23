@@ -133,6 +133,13 @@ def _direction_chevron(points: list[tuple[float, float]]) -> str:
     return f"M {bx + px:.1f} {by + py:.1f} L {tip[0]:.1f} {tip[1]:.1f} L {bx - px:.1f} {by - py:.1f}"
 
 
+def _start_label(index: int) -> str:
+    labels = ("α", "β", "γ", "δ", "ε", "ζ", "η", "κ", "λ")
+    if index < len(labels):
+        return f"θ₀·{labels[index]}"
+    return f"θ₀·{index + 1}"
+
+
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
     print_width = float(config.get("print_width", 12.0))
     print_height = float(config.get("print_height", 16.0))
@@ -243,7 +250,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     for start_index, start in enumerate(starts):
         p = project(start[0], start[1], surface.value(*start) + 0.06)
         svg.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="8" fill="{paper}" stroke="{ink}" stroke-width="2.5"/>')
-        svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{ink}" font-family="monospace" font-size="12">START {start_index + 1}</text>')
+        svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{ink}" opacity="0.9" font-family="monospace" font-size="13">{_start_label(start_index)}</text>')
     svg.append('</g>')
 
     # A crisp DEM title with a quiet six-pen rule—colour without faux blur.

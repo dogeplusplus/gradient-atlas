@@ -71,6 +71,8 @@ class CoreTests(unittest.TestCase):
             svg = target.read_text(encoding="utf-8")
             self.assertIn('fill="#071019"', svg)
             self.assertIn('fill="#edf8ff"', svg)
+            self.assertIn("θ₀·α", svg)
+            self.assertNotIn("START 1", svg)
 
     def test_dark_friendly_palettes_are_available(self):
         for name in ("aurora", "ember", "twilight", "topo", "glacier"):

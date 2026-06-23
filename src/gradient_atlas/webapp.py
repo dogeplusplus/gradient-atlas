@@ -100,7 +100,8 @@ class AppHandler(BaseHTTPRequestHandler):
                 request = json.loads(self.rfile.read(length))
                 surface, metadata = fetch_surface(float(request["north"]), float(request["south"]),
                                                   float(request["east"]), float(request["west"]),
-                                                  int(request.get("resolution", 96)), int(request.get("smoothing", 8)))
+                                                  int(request.get("resolution", 96)), int(request.get("smoothing", 8)),
+                                                  bool(request.get("parallel_tiles", True)))
                 self._json(200, {"grid": surface.grid, "width": surface.width,
                                  "height": surface.height, "metadata": metadata})
                 return

@@ -142,6 +142,13 @@ def _start_label(index: int) -> str:
     return f"θ₀·{index + 1}"
 
 
+def _triangle_corners(x0: float, x1: float, y0: float, y1: float,
+                      ix: int, iy: int) -> list[list[tuple[float, float]]]:
+    if (ix + iy) % 2:
+        return [[(x0, y0), (x1, y0), (x0, y1)], [(x1, y0), (x1, y1), (x0, y1)]]
+    return [[(x0, y0), (x1, y0), (x1, y1)], [(x0, y0), (x1, y1), (x0, y1)]]
+
+
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
     print_width = float(config.get("print_width", 12.0))
     print_height = float(config.get("print_height", 16.0))
@@ -157,6 +164,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     steps = int(config.get("steps", 22))
     step_length = float(config.get("step_length", 1.0))
     grid_lines = int(config.get("grid_lines", 75))
+    mesh_style = str(config.get("mesh_style", "grid")).lower()
     vertical_scale = float(config.get("vertical_scale", 1.0))
     fill_opacity = float(config.get("fill_opacity", 0.10))
     theme = THEMES.get(str(config.get("theme", "light")).lower(), THEMES["light"])
@@ -186,27 +194,45 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         for iy in range(resolution):
             x0, x1 = -3 + 6 * ix / resolution, -3 + 6 * (ix + 1) / resolution
             y0, y1 = -3 + 6 * iy / resolution, -3 + 6 * (iy + 1) / resolution
-            corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
-            zs = [surface.value(x, y) for x, y in corners]
-            cells.append((x0 + y0, [project(x, y, z) for (x, y), z in zip(corners, zs)], sum(zs) / 4))
+            polygons = _triangle_corners(x0, x1, y0, y1, ix, iy) if mesh_style == "triangles" else [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]]
+            for corners in polygons:
+                zs = [surface.value(x, y) for x, y in corners]
+                cells.append((x0 + y0, [project(x, y, z) for (x, y), z in zip(corners, zs)], sum(zs) / len(zs)))
     for _, points, z in sorted(cells):
         c = _colour(z, palette)
         svg.append(f'<polygon points="{_points(points)}" fill="{c}" fill-opacity="{fill_opacity}" stroke="none"/>')
 
-    samples = 160
-    for family in ("x", "y"):
-        for i in range(grid_lines):
-            fixed = -3 + 6 * i / (grid_lines - 1)
-            points, zs = [], []
-            for j in range(samples):
-                moving = -3 + 6 * j / (samples - 1)
-                x, y = (moving, fixed) if family == "x" else (fixed, moving)
-                z = surface.value(x, y)
-                points.append(project(x, y, z)); zs.append(z)
-            major = i % 6 == 0
-            for j, (a, b) in enumerate(zip(points, points[1:])):
-                c = _colour((zs[j] + zs[j + 1]) / 2, palette)
-                svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.95 if major else 0.40}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
+    if mesh_style == "triangles":
+        mesh = max(12, grid_lines)
+        vertices = [[(-3 + 6 * x / (mesh - 1), -3 + 6 * y / (mesh - 1)) for x in range(mesh)] for y in range(mesh)]
+        projected = [[project(x, y, surface.value(x, y)) for x, y in row] for row in vertices]
+        for y in range(mesh - 1):
+            for x in range(mesh - 1):
+                edges = ((projected[y][x], projected[y][x + 1], vertices[y][x], vertices[y][x + 1]),
+                         (projected[y][x], projected[y + 1][x], vertices[y][x], vertices[y + 1][x]))
+                if (x + y) % 2:
+                    edges += ((projected[y][x + 1], projected[y + 1][x], vertices[y][x + 1], vertices[y + 1][x]),)
+                else:
+                    edges += ((projected[y][x], projected[y + 1][x + 1], vertices[y][x], vertices[y + 1][x + 1]),)
+                major = x % 6 == 0 or y % 6 == 0
+                for a, b, va, vb in edges:
+                    c = _colour((surface.value(*va) + surface.value(*vb)) / 2, palette)
+                    svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.85 if major else 0.38}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
+    else:
+        samples = 160
+        for family in ("x", "y"):
+            for i in range(grid_lines):
+                fixed = -3 + 6 * i / (grid_lines - 1)
+                points, zs = [], []
+                for j in range(samples):
+                    moving = -3 + 6 * j / (samples - 1)
+                    x, y = (moving, fixed) if family == "x" else (fixed, moving)
+                    z = surface.value(x, y)
+                    points.append(project(x, y, z)); zs.append(z)
+                major = i % 6 == 0
+                for j, (a, b) in enumerate(zip(points, points[1:])):
+                    c = _colour((zs[j] + zs[j + 1]) / 2, palette)
+                    svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.95 if major else 0.40}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
 
     trajectory_art = []
     for start_index, start in enumerate(starts):

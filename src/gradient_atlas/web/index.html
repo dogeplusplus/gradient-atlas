@@ -35,6 +35,7 @@
           <div id="searchResults" class="search-results"></div>
           <div id="map"></div>
           <p class="source-hint">Draw or edit a rectangle around the terrain you want.</p>
+          <label class="inline-option"><input id="parallelTiles" type="checkbox" checked> Fetch multi-tile selections in parallel</label>
           <button id="fetchMap" class="fetch" disabled>Fetch selected terrain</button>
         </div>
         <div id="source-coords" class="source-panel">
@@ -111,6 +112,9 @@
         </label>
         <label>Trajectory treatment
           <select id="trajectoryStyle"><option value="flowing" selected>Flowing ink — recommended</option><option value="technical">Technical steps</option><option value="minimal">Minimal line</option></select>
+        </label>
+        <label>Surface mesh
+          <select id="meshStyle"><option value="triangles" selected>Triangular facets</option><option value="grid">Square wire grid</option></select>
         </label>
         <label>Print size
           <select id="printPreset">

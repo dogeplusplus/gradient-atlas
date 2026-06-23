@@ -2,11 +2,13 @@ import math
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from gradient_atlas.dem import Surface, normalize, resample
 from gradient_atlas.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
 from gradient_atlas.render import PALETTES, _clean_trajectory, _direction_chevron, _trajectory_d, render
 from gradient_atlas.webapp import parse_multipart
+from gradient_atlas import terrain_fetch
 from gradient_atlas.terrain_fetch import _zoom_for_bbox
 
 
@@ -76,6 +78,19 @@ class CoreTests(unittest.TestCase):
             self.assertIn("θ₀·α", svg)
             self.assertNotIn("START 1", svg)
 
+    def test_render_supports_triangular_mesh(self):
+        surface = Surface(normalize(bowl()))
+        with tempfile.TemporaryDirectory() as temp:
+            grid_target = Path(temp) / "grid.svg"
+            triangle_target = Path(temp) / "triangles.svg"
+            config = {"grid_lines": 4, "steps": 2, "optimizers": ["SGD"]}
+            render(surface, config | {"mesh_style": "grid"}, grid_target)
+            render(surface, config | {"mesh_style": "triangles"}, triangle_target)
+            self.assertGreater(
+                triangle_target.read_text(encoding="utf-8").count("<polygon"),
+                grid_target.read_text(encoding="utf-8").count("<polygon"),
+            )
+
     def test_dark_friendly_palettes_are_available(self):
         for name in ("aurora", "ember", "twilight", "topo", "glacier"):
             with self.subTest(palette=name):
@@ -111,6 +126,16 @@ class CoreTests(unittest.TestCase):
     def test_terrain_zoom_stays_bounded(self):
         self.assertGreaterEqual(_zoom_for_bbox(37.8, 37.7, -119.5, -119.7), 7)
         self.assertLessEqual(_zoom_for_bbox(37.8, 37.7, -119.5, -119.7), 12)
+
+    def test_terrain_fetch_can_parallelize_multiple_tiles(self):
+        def fake_tile(_zoom, tx, ty):
+            red = 128 + (tx + ty) % 4
+            return 256, 256, bytes([red, 0, 0]) * 256 * 256
+
+        with patch.object(terrain_fetch, "_tile", side_effect=fake_tile):
+            _surface, metadata = terrain_fetch.fetch_surface(7, 0, 7, 0, resolution=4, smoothing=0)
+        self.assertGreater(metadata["tiles"], 1)
+        self.assertEqual(metadata["tile_fetch_mode"], "parallel")
 
 
 if __name__ == "__main__":

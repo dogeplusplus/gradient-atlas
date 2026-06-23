@@ -6,6 +6,7 @@
   "objective": "descent",
   "step_length": 0.9,
   "trajectory_style": "flowing",
+  "mesh_style": "triangles",
   "theme": "dark",
   "print_width": 18,
   "print_height": 24,

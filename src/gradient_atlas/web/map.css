@@ -11,6 +11,7 @@
 #terrainCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:fill}
 .start-suggest{display:grid;grid-template-columns:104px 1fr;gap:8px;align-items:end;margin-top:10px}.start-suggest select{margin-top:5px}.start-suggest .fetch{height:35px}
 .preset-label{margin-bottom:5px!important}.preset-label select{margin-top:5px}.preset-hint{margin:0 1px 9px}
+.inline-option{display:flex!important;align-items:center;gap:7px;margin:5px 0 8px!important;font:700 9px ui-monospace,SFMono-Regular,Menlo,monospace;color:#6f8189}.inline-option input{margin:0;accent-color:#1d6f73}
 
 body[data-theme=dark] .source-tabs{border-color:#263b4a;background:#0b1722}
 body[data-theme=dark] .source-tabs button{color:#9fb4c2}
@@ -20,5 +21,6 @@ body[data-theme=dark] .search-results button{border-color:#1c303f;color:#d8eaf4}
 body[data-theme=dark] .search-results button:hover{background:#102333}
 body[data-theme=dark] #map{border-color:#263b4a;background:#08131d;filter:saturate(.82) brightness(.88)}
 body[data-theme=dark] .source-hint{color:#8ba2b1}
+body[data-theme=dark] .inline-option{color:#9fb4c2}body[data-theme=dark] .inline-option input{accent-color:#27a7a7}
 body[data-theme=dark] .fetch{background:#1f8f8f}
 body[data-theme=dark] .fetch:hover:not(:disabled){background:#27a7a7}

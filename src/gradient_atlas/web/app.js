@@ -165,11 +165,11 @@ async function fetchTerrain(bounds, title='') {
   setStatus('Fetching and stitching global elevation tiles…');
   terrainController?.abort();const controller=new AbortController();terrainController=controller;
   try {
-    const r=await fetch('/api/terrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...bounds,smoothing:+$('#smoothing').value,resolution:96}),signal:controller.signal});
+    const r=await fetch('/api/terrain',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...bounds,smoothing:+$('#smoothing').value,resolution:96,parallel_tiles:$('#parallelTiles')?.checked!==false}),signal:controller.signal});
     const data=await r.json(); if(!r.ok)throw new Error(data.error);
     if(controller!==terrainController)return;
     naturalVerticalScale=data.metadata.natural_vertical_scale;applyReliefMode();
-    acceptGrid(data,title,`Terrain ready · ${data.metadata.elevation_min}–${data.metadata.elevation_max} m · ${data.metadata.width_km}×${data.metadata.height_km} km · ${data.metadata.tiles} tile(s)`);
+    acceptGrid(data,title,`Terrain ready · ${data.metadata.elevation_min}–${data.metadata.elevation_max} m · ${data.metadata.width_km}×${data.metadata.height_km} km · ${data.metadata.tiles} tile(s), ${data.metadata.tile_fetch_mode}`);
   } catch(e) { if(e.name==='AbortError')return;if(!grid)$('#terrainShell').classList.add('empty');setStatus(e.message,true); }
   finally { if(controller===terrainController)$('#loading').classList.remove('show'); }
 }
@@ -271,11 +271,11 @@ $('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((ne
 $('#printPreset').onchange=applyPrintPreset;
 $('#printOrientation').onchange=()=>{let width=+$('#printWidth').value,height=+$('#printHeight').value;const landscape=$('#printOrientation').value==='landscape';if((landscape&&height>width)||(!landscape&&width>height)){[$('#printWidth').value,$('#printHeight').value]=[height,width]}updatePrintHint();scheduleRender(180)};
 ['printWidth','printHeight'].forEach(id=>$('#'+id).addEventListener('input',()=>{$('#printPreset').value='custom';updatePrintHint();scheduleRender()}));
-['trajectoryStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
+['trajectoryStyle','meshStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
 $('#title').addEventListener('input',()=>scheduleRender(500));
 $$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));
 
-function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,theme:$('#theme').value,print_width:+$('#printWidth').value,print_height:+$('#printHeight').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90}}
+function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,mesh_style:$('#meshStyle').value,theme:$('#theme').value,print_width:+$('#printWidth').value,print_height:+$('#printHeight').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90}}
 
 function scheduleRender(delay=320) {
   if(!grid)return;renderVersion++;clearTimeout(renderTimer);

@@ -8,6 +8,7 @@ import time
 import urllib.parse
 import urllib.request
 import zlib
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from .dem import Surface, normalize, smooth
@@ -97,7 +98,8 @@ def _zoom_for_bbox(north: float, south: float, east: float, west: float) -> int:
 
 
 def fetch_surface(north: float, south: float, east: float, west: float,
-                  resolution: int = 96, smoothing: int = 8) -> tuple[Surface, dict]:
+                  resolution: int = 96, smoothing: int = 8,
+                  parallel_tiles: bool = True) -> tuple[Surface, dict]:
     if not (-85 <= south < north <= 85 and -180 <= west < east <= 180):
         raise ValueError("Invalid bounds; the selection must not cross the date line")
     if max(north - south, east - west) > 8:
@@ -105,10 +107,15 @@ def fetch_surface(north: float, south: float, east: float, west: float,
     zoom = _zoom_for_bbox(north, south, east, west)
     left, top = _world_pixel(north, west, zoom)
     right, bottom = _world_pixel(south, east, zoom)
-    tiles = {}
-    for tx in range(int(left // 256), int(right // 256) + 1):
-        for ty in range(int(top // 256), int(bottom // 256) + 1):
-            tiles[tx, ty] = _tile(zoom, tx, ty)
+    tile_keys = [(tx, ty) for tx in range(int(left // 256), int(right // 256) + 1)
+                 for ty in range(int(top // 256), int(bottom // 256) + 1)]
+    if parallel_tiles and len(tile_keys) > 1:
+        with ThreadPoolExecutor(max_workers=min(8, len(tile_keys))) as pool:
+            tiles = dict(zip(tile_keys, pool.map(lambda key: _tile(zoom, *key), tile_keys)))
+        fetch_mode = "parallel"
+    else:
+        tiles = {key: _tile(zoom, *key) for key in tile_keys}
+        fetch_mode = "sequential"
 
     def elevation(px: float, py: float) -> float:
         tx, ty = int(px // 256), int(py // 256)
@@ -133,7 +140,8 @@ def fetch_surface(north: float, south: float, east: float, west: float,
     return surface, {"zoom": zoom, "elevation_min": round(raw_min), "elevation_max": round(raw_max),
                      "width_km": round(width_km, 1), "height_km": round(height_km, 1),
                      "natural_vertical_scale": round(natural_scale, 3),
-                     "tiles": len(tiles), "source": "AWS Terrain Tiles"}
+                     "tiles": len(tiles), "tile_fetch_mode": fetch_mode,
+                     "source": "AWS Terrain Tiles"}
 
 
 def search_places(query: str) -> list[dict]:

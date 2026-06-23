@@ -20,9 +20,9 @@ body[data-theme=dark] .generate:hover:not(:disabled){background:#bff0ff}
 body[data-theme=dark] .download-row button:hover:not(:disabled){border-color:#62d9ff;color:#8ee6ff}
 body[data-theme=dark] .loading{background:rgba(7,16,25,.88)}
 
-.controls label{font-size:10px}
-.controls input[type=text],.controls input[type=number],.controls select{height:34px;margin-top:5px}
-.controls input[type=range]{margin:8px 0 12px}
+.controls label,.appearance-panel label{font-size:10px}
+.controls input[type=text],.controls input[type=number],.controls select,.appearance-panel input[type=text],.appearance-panel input[type=number],.appearance-panel select{height:34px;margin-top:5px}
+.controls input[type=range],.appearance-panel input[type=range]{margin:8px 0 12px}
 .optimizer-grid{grid-template-columns:repeat(3,1fr)}
 .optimizer-grid label{height:29px;padding:0 7px;font-size:9px}
 .optimizer-grid label:before{width:11px;margin-right:5px}
@@ -31,3 +31,7 @@ body[data-theme=dark] .loading{background:rgba(7,16,25,.88)}
 .dropzone{min-height:98px;margin-bottom:10px}
 .drop-icon{font-size:22px}.dropzone strong{margin:3px 0}.dropzone em{margin-top:6px}
 .coordinate-bar{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 2px 6px}
+.appearance-panel{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.appearance-panel .section-heading{margin-bottom:11px}
+.appearance-panel>label{margin-bottom:10px}
+.appearance-panel .source-hint{margin-top:5px}

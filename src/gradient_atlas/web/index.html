@@ -78,7 +78,25 @@
         </div>
       </section>
 
-      <section>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-head">
+        <div><p class="eyebrow">STARTS</p><h2>Place points</h2></div>
+        <div class="stage-actions"><button id="expandTerrain" class="quiet expand-button">⛶</button><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button></div>
+      </div>
+      <div id="terrainShell" class="terrain-shell empty">
+        <canvas id="terrainCanvas" width="800" height="600"></canvas>
+        <div class="empty-copy"><span>⌁</span><strong>Your terrain appears here</strong><small>Search, enter coordinates, or upload a DEM.</small></div>
+        <div id="loading" class="loading"><i></i><span>Reading terrain…</span></div>
+      </div>
+      <div class="coordinate-bar">
+        <span id="pointCount">0 start points</span>
+        <span>visual 0–1</span>
+      </div>
+      <button id="generate" class="generate generate-top" disabled><span>Generate descent artwork</span><b>→</b></button>
+
+      <section class="appearance-panel">
         <div class="section-heading"><b>03</b><h2>Appearance</h2></div>
         <label>Colour map
           <select id="palette"><option value="spectrum">Spectrum</option><option value="ocean">Ocean</option><option value="magma">Magma</option><option value="mono">Monochrome</option></select>
@@ -116,23 +134,6 @@
         </div>
         <p id="reliefHint" class="source-hint">Subtle boost uses 1.45× the terrain's physical relief.</p>
       </section>
-    </aside>
-
-    <section class="stage">
-      <div class="stage-head">
-        <div><p class="eyebrow">STARTS</p><h2>Place points</h2></div>
-        <div class="stage-actions"><button id="expandTerrain" class="quiet expand-button">⛶</button><button id="undoStart" class="quiet">Undo</button><button id="clearStarts" class="quiet">Clear</button></div>
-      </div>
-      <div id="terrainShell" class="terrain-shell empty">
-        <canvas id="terrainCanvas" width="800" height="600"></canvas>
-        <div class="empty-copy"><span>⌁</span><strong>Your terrain appears here</strong><small>Search, enter coordinates, or upload a DEM.</small></div>
-        <div id="loading" class="loading"><i></i><span>Reading terrain…</span></div>
-      </div>
-      <div class="coordinate-bar">
-        <span id="pointCount">0 start points</span>
-        <span>visual 0–1</span>
-      </div>
-      <button id="generate" class="generate generate-top" disabled><span>Generate descent artwork</span><b>→</b></button>
     </section>
 
     <aside class="panel result-panel">

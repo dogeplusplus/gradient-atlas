@@ -1,16 +1,22 @@
-.workspace{grid-template-columns:300px minmax(560px,1fr) minmax(360px,26vw)}
-.stage{min-height:700px}
-.stage-head{position:sticky;top:0;z-index:8;padding-bottom:12px;background:#f4f0e7}
-.stage-actions{align-items:center;flex-wrap:wrap;justify-content:flex-end}
-.terrain-shell{min-height:470px;max-height:590px}
-#map{height:380px}
-.result-panel{min-width:360px}
+.workspace{grid-template-columns:minmax(410px,28vw) minmax(280px,21vw) minmax(520px,1fr);min-height:calc(100vh - 86px)}
+.masthead{height:86px;padding:20px 34px 16px}
+.panel{padding:20px 22px}
+.controls{display:grid;align-content:start;gap:18px}
+.controls section{margin:0;padding:0;border-top:0}
+.section-heading{margin-bottom:12px}.section-heading b{width:22px;height:22px}.section-heading h2{font-size:14px}
+.stage{min-height:0;padding:20px 18px}
+.stage-head{position:static;padding-bottom:0;background:transparent;margin-bottom:10px}
+.stage-head h2{font-size:15px}
+.stage-actions{align-items:center;flex-wrap:nowrap;justify-content:flex-end}
+.terrain-shell{min-height:260px;max-height:340px;flex:0 0 clamp(260px,43vh,340px)}
+#map{height:315px}
+.result-panel{min-width:520px}
 .result-heading{justify-content:space-between}
 .result-heading>div{display:flex;align-items:center;gap:10px}
 .result-heading .expand-button{margin-left:auto}
-.art-shell{aspect-ratio:auto;min-height:520px;max-height:calc(100vh - 255px)}
+.art-shell{aspect-ratio:auto;min-height:610px;max-height:calc(100vh - 215px)}
 .expand-button{font-weight:700;color:#1d6f73;border-color:#9bbab8}
-.generate-top{width:auto;min-width:190px;height:40px;padding:0 14px;gap:18px}
+.generate-top{width:100%;min-width:0;height:44px;padding:0 14px;gap:18px;margin-top:8px}
 
 .viewer-dialog{width:min(94vw,1500px);height:92vh;max-width:none;max-height:none;padding:0;border:1px solid #aebbb8;border-radius:16px;background:#f8f5ee;color:#17324d;box-shadow:0 28px 90px rgba(19,46,71,.28);overflow:hidden}
 .viewer-dialog::backdrop{background:rgba(15,32,44,.65);backdrop-filter:blur(5px)}
@@ -28,7 +34,7 @@
 .dialog-empty{position:absolute;inset:0;display:grid;place-items:center;color:#7b898e;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
 .large-terrain-shell.ready .dialog-empty,.large-art-shell.ready .dialog-empty{display:none}
 
-@media(max-width:1300px){.workspace{grid-template-columns:285px minmax(530px,1fr) 350px}.panel{padding-left:18px;padding-right:18px}}
+@media(max-width:1300px){.workspace{grid-template-columns:380px 260px minmax(430px,1fr)}.panel{padding-left:16px;padding-right:16px}.art-shell{min-height:540px}.terrain-shell{flex-basis:260px}}
 
 body[data-theme=dark] .viewer-dialog{border-color:#263b4a;background:#071019;color:#edf8ff;box-shadow:0 28px 90px rgba(0,0,0,.55)}
 body[data-theme=dark] .viewer-dialog header,body[data-theme=dark] .viewer-dialog footer{border-color:#243746;background:#0b1722;color:#9fb4c2}

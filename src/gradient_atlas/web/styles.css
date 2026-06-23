@@ -19,3 +19,15 @@ body[data-theme=dark] .generate,body[data-theme=dark] .search-row button{backgro
 body[data-theme=dark] .generate:hover:not(:disabled){background:#bff0ff}
 body[data-theme=dark] .download-row button:hover:not(:disabled){border-color:#62d9ff;color:#8ee6ff}
 body[data-theme=dark] .loading{background:rgba(7,16,25,.88)}
+
+.controls label{font-size:10px}
+.controls input[type=text],.controls input[type=number],.controls select{height:34px;margin-top:5px}
+.controls input[type=range]{margin:8px 0 12px}
+.optimizer-grid{grid-template-columns:repeat(3,1fr)}
+.optimizer-grid label{height:29px;padding:0 7px;font-size:9px}
+.optimizer-grid label:before{width:11px;margin-right:5px}
+.print-options{grid-template-columns:1fr 1fr 1fr}
+.palette-strip{margin:9px 0 11px}
+.dropzone{min-height:98px;margin-bottom:10px}
+.drop-icon{font-size:22px}.dropzone strong{margin:3px 0}.dropzone em{margin-top:6px}
+.coordinate-bar{display:grid;grid-template-columns:1fr auto;gap:8px;padding:9px 2px 6px}

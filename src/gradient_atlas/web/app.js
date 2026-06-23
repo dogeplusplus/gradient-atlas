@@ -125,8 +125,8 @@ function drawTerrainCanvas(target) {
     }
   }
   const dark=$('#theme').value==='dark';
-  context.putImageData(image,0,0); context.fillStyle=dark?'rgba(7,16,25,.22)':'rgba(248,245,238,.08)';context.fillRect(0,0,w,h);
-  context.strokeStyle=dark?'rgba(237,248,255,.32)':'rgba(255,255,255,.22)'; context.lineWidth=1;
+  context.putImageData(image,0,0); context.fillStyle=dark?'rgba(7,16,25,.08)':'rgba(248,245,238,.08)';context.fillRect(0,0,w,h);
+  context.strokeStyle=dark?'rgba(237,248,255,.42)':'rgba(255,255,255,.22)'; context.lineWidth=1;
   for(let i=0;i<=16;i++) {
     context.beginPath();context.moveTo(i*w/16,0);context.lineTo(i*w/16,h);context.stroke();
     context.beginPath();context.moveTo(0,i*h/16);context.lineTo(w,i*h/16);context.stroke();

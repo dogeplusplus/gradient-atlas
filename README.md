@@ -122,7 +122,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `vertical_scale` | Visual height exaggeration |
 | `auto_fit` | Measure and fit each surface into the available vertical poster area |
 | `surface_top` / `surface_bottom` | Vertical framing bounds; with print dimensions, the lower bound is derived from the page aspect |
-| `fill_opacity` | Transparent colour wash beneath the wireframe |
+| `fill_opacity` | Transparent colour wash beneath the wireframe; dark theme enforces a brighter minimum |
 | `png_preview` | Also create a PNG when a converter is available |
 
 A custom colour map is simply:

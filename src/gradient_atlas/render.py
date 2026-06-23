@@ -27,13 +27,15 @@ THEMES = {
         "muted": "#17324d",
         "rule_opacity": 0.35,
         "grid_opacity": (0.72, 0.38),
+        "min_fill_opacity": 0.0,
     },
     "dark": {
         "paper": "#071019",
         "ink": "#edf8ff",
         "muted": "#b7cbd8",
         "rule_opacity": 0.42,
-        "grid_opacity": (0.86, 0.50),
+        "grid_opacity": (0.96, 0.66),
+        "min_fill_opacity": 0.22,
     },
 }
 INK, PAPER = THEMES["light"]["ink"], THEMES["light"]["paper"]
@@ -160,6 +162,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     theme = THEMES.get(str(config.get("theme", "light")).lower(), THEMES["light"])
     paper, ink, muted = theme["paper"], theme["ink"], theme["muted"]
     major_grid_opacity, minor_grid_opacity = theme["grid_opacity"]
+    fill_opacity = max(fill_opacity, float(theme["min_fill_opacity"]))
     palette_value = config.get("palette", "spectrum")
     palette = tuple(palette_value) if isinstance(palette_value, list) else PALETTES.get(palette_value, PALETTES["spectrum"])
     methods = config.get("optimizers", list(OPTIMIZER_COLORS))

@@ -7,7 +7,7 @@ import subprocess
 from pathlib import Path
 
 from .dem import prepare_surface
-from .render import PALETTES, render
+from .render import PALETTES, THEMES, render
 
 
 def _preview(svg: Path, png: Path) -> None:
@@ -32,6 +32,7 @@ def main() -> None:
     parser.add_argument("--size", metavar="WIDTHxHEIGHT", help="Print dimensions in inches, for example 18x24")
     parser.add_argument("--start", action="append", metavar="X,Y", help="Start point in visual 0..1 coordinates; repeatable")
     parser.add_argument("--palette", choices=tuple(PALETTES), help="Override colour map")
+    parser.add_argument("--theme", choices=tuple(THEMES), help="Override artwork theme")
     args = parser.parse_args()
     config_path = args.config.resolve()
     config = json.loads(config_path.read_text(encoding="utf-8"))
@@ -47,6 +48,7 @@ def main() -> None:
             parser.error("--size must use WIDTHxHEIGHT in inches, for example 18x24")
         config["print_width"], config["print_height"] = width, height
     if args.palette: config["palette"] = args.palette
+    if args.theme: config["theme"] = args.theme
     if args.start: config["start_points"] = [[float(v) for v in item.split(",")] for item in args.start]
     surface = prepare_surface(dem_path, int(config.get("smoothing", 8)), int(config.get("dem_resolution", 96)))
     svg = render(surface, config, output)

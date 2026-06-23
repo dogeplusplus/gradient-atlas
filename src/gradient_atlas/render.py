@@ -15,7 +15,23 @@ PALETTES = {
 }
 
 W, H = 1200, 1600
-INK, PAPER = "#17324d", "#f8f5ee"
+THEMES = {
+    "light": {
+        "paper": "#f8f5ee",
+        "ink": "#17324d",
+        "muted": "#17324d",
+        "rule_opacity": 0.35,
+        "grid_opacity": (0.72, 0.38),
+    },
+    "dark": {
+        "paper": "#071019",
+        "ink": "#edf8ff",
+        "muted": "#b7cbd8",
+        "rule_opacity": 0.42,
+        "grid_opacity": (0.86, 0.50),
+    },
+}
+INK, PAPER = THEMES["light"]["ink"], THEMES["light"]["paper"]
 
 
 def _mix(a: str, b: str, t: float) -> str:
@@ -129,6 +145,9 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     grid_lines = int(config.get("grid_lines", 75))
     vertical_scale = float(config.get("vertical_scale", 1.0))
     fill_opacity = float(config.get("fill_opacity", 0.10))
+    theme = THEMES.get(str(config.get("theme", "light")).lower(), THEMES["light"])
+    paper, ink, muted = theme["paper"], theme["ink"], theme["muted"]
+    major_grid_opacity, minor_grid_opacity = theme["grid_opacity"]
     palette_value = config.get("palette", "spectrum")
     palette = tuple(palette_value) if isinstance(palette_value, list) else PALETTES.get(palette_value, PALETTES["spectrum"])
     methods = config.get("optimizers", list(OPTIMIZER_COLORS))
@@ -143,7 +162,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
                          float(config.get("surface_top", 90)), surface_bottom, page_width)
 
     svg = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {page_width} {page_height}" width="{print_width:g}in" height="{print_height:g}in">',
-           f'<rect width="{page_width}" height="{page_height}" fill="{PAPER}"/>',
+           f'<rect width="{page_width}" height="{page_height}" fill="{paper}"/>',
            '<g fill="none" stroke-linecap="round" stroke-linejoin="round">']
 
     resolution = 68
@@ -172,7 +191,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
             major = i % 6 == 0
             for j, (a, b) in enumerate(zip(points, points[1:])):
                 c = _colour((zs[j] + zs[j + 1]) / 2, palette)
-                svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.95 if major else 0.40}" opacity="{0.72 if major else 0.38}"/>')
+                svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.95 if major else 0.40}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
 
     trajectory_art = []
     for start_index, start in enumerate(starts):
@@ -193,7 +212,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     # Draw shared halos before any coloured ink; otherwise later paths erase earlier ones.
     trajectory_art.sort(key=lambda item: item["length"], reverse=True)
     for item in trajectory_art:
-        svg.append(f'<path d="{item["path_d"]}" stroke="{PAPER}" stroke-width="{8.2 if item["primary"] else 6.2}" opacity="0.82"/>')
+        svg.append(f'<path d="{item["path_d"]}" stroke="{paper}" stroke-width="{8.2 if item["primary"] else 6.2}" opacity="0.82"/>')
     if trajectory_style == "flowing":
         for item in trajectory_art:
             svg.append(f'<path d="{item["path_d"]}" stroke="{item["colour"]}" stroke-width="{5.4 if item["primary"] else 4.0}" opacity="{0.22 if item["primary"] else 0.15}"/>')
@@ -209,29 +228,29 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
             marker_indices = sorted({round(i * (len(projected) - 1) / (marker_count + 1)) for i in range(1, marker_count + 1)})
             for marker_index in marker_indices:
                 mx, my = projected[marker_index]
-                svg.append(f'<circle cx="{mx:.1f}" cy="{my:.1f}" r="{2.5 if primary else 2}" fill="{PAPER}" stroke="{colour}" stroke-width="1.4" opacity="{0.95 if primary else 0.7}"/>')
+                svg.append(f'<circle cx="{mx:.1f}" cy="{my:.1f}" r="{2.5 if primary else 2}" fill="{paper}" stroke="{colour}" stroke-width="1.4" opacity="{0.95 if primary else 0.7}"/>')
             chevron = _direction_chevron(projected)
             if chevron:
                 svg.append(f'<path d="{chevron}" stroke="{colour}" stroke-width="{2.2 if primary else 1.7}" opacity="{0.95 if primary else 0.68}"/>')
         end = projected[-1]
-        svg.append(f'<circle cx="{end[0]:.1f}" cy="{end[1]:.1f}" r="4.8" fill="{colour}" stroke="{PAPER}" stroke-width="2"/>')
+        svg.append(f'<circle cx="{end[0]:.1f}" cy="{end[1]:.1f}" r="4.8" fill="{colour}" stroke="{paper}" stroke-width="2"/>')
 
     for start_index, start in enumerate(starts):
         p = project(start[0], start[1], surface.value(*start) + 0.06)
-        svg.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="8" fill="{PAPER}" stroke="{INK}" stroke-width="2.5"/>')
-        svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{INK}" font-family="monospace" font-size="12">START {start_index + 1}</text>')
+        svg.append(f'<circle cx="{p[0]:.1f}" cy="{p[1]:.1f}" r="8" fill="{paper}" stroke="{ink}" stroke-width="2.5"/>')
+        svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{ink}" font-family="monospace" font-size="12">START {start_index + 1}</text>')
     svg.append('</g>')
 
     # A crisp DEM title with a quiet six-pen rule—colour without faux blur.
     title_y = page_height - 352
     title_size = min(60, max(42, (page_width - 220) / max(1, len(title) * 0.62)))
-    svg.append(f'<text x="72" y="{title_y}" fill="{INK}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
+    svg.append(f'<text x="72" y="{title_y}" fill="{ink}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
     segment_width = 66
     for i, method in enumerate(methods):
         x1 = 75 + i * segment_width
         svg.append(f'<line x1="{x1}" y1="{page_height - 330}" x2="{x1 + segment_width - 8}" y2="{page_height - 330}" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
-    svg.append(f'<text x="75" y="{page_height - 295}" fill="{INK}" opacity="0.65" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH  </text>')
-    svg.append(f'<line x1="75" y1="{page_height - 272}" x2="{page_width - 75}" y2="{page_height - 272}" stroke="{INK}" opacity="0.35"/>')
+    svg.append(f'<text x="75" y="{page_height - 295}" fill="{muted}" opacity="0.72" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH  </text>')
+    svg.append(f'<line x1="75" y1="{page_height - 272}" x2="{page_width - 75}" y2="{page_height - 272}" stroke="{ink}" opacity="{theme["rule_opacity"]}"/>')
     positions = [(75, page_height - 244), (75, page_height - 190), (75, page_height - 136),
                  (page_width / 2 + 25, page_height - 244), (page_width / 2 + 25, page_height - 190), (page_width / 2 + 25, page_height - 136)]
     for method, (x, y) in zip(methods, positions):
@@ -239,9 +258,9 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 28}" y2="{y - 5}" stroke="{c}" stroke-width="5"/>')
         svg.append(f'<text x="{x + 38}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="14">{method.upper()}</text>')
         for line_index, equation in enumerate(equations[method]):
-            svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{INK}" font-family="monospace" font-size="11.8">{equation}</text>')
-    svg.extend([f'<line x1="75" y1="{page_height - 88}" x2="{page_width - 75}" y2="{page_height - 88}" stroke="{INK}" opacity="0.35"/>',
-                f'<text x="75" y="{page_height - 55}" fill="{INK}" opacity="0.58" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
+            svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{ink}" font-family="monospace" font-size="11.8">{equation}</text>')
+    svg.extend([f'<line x1="75" y1="{page_height - 88}" x2="{page_width - 75}" y2="{page_height - 88}" stroke="{ink}" opacity="{theme["rule_opacity"]}"/>',
+                f'<text x="75" y="{page_height - 55}" fill="{muted}" opacity="0.68" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg), encoding="utf-8")

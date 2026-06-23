@@ -63,6 +63,15 @@ class CoreTests(unittest.TestCase):
                 self.assertIn(f'viewBox="{viewbox}"', svg)
                 self.assertIn(f'width="{width}in" height="{height}in"', svg)
 
+    def test_render_supports_dark_theme(self):
+        surface = Surface(normalize(bowl()))
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / "dark.svg"
+            render(surface, {"theme": "dark", "grid_lines": 3, "steps": 2, "optimizers": ["SGD"]}, target)
+            svg = target.read_text(encoding="utf-8")
+            self.assertIn('fill="#071019"', svg)
+            self.assertIn('fill="#edf8ff"', svg)
+
     def test_high_disagreement_starts_are_spatially_distinct(self):
         surface = Surface(normalize(bowl()))
         descent = find_high_disagreement_starts(surface, list(OPTIMIZER_COLORS), 18, count=3)

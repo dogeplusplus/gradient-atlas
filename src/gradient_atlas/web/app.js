@@ -77,6 +77,11 @@ function updateStrip() {
   if (grid) drawTerrain();
 }
 
+function applyTheme() {
+  document.body.dataset.theme = $('#theme').value;
+  if (grid) drawTerrain();
+}
+
 function applyReliefMode() {
   const mode=$('#reliefMode').value, base=naturalVerticalScale ?? .31;
   if(mode==='natural') $('#heightScale').value=base.toFixed(2);
@@ -114,14 +119,16 @@ function drawTerrainCanvas(target) {
       image.data[o]=rgb[0]; image.data[o+1]=rgb[1]; image.data[o+2]=rgb[2]; image.data[o+3]=210;
     }
   }
-  context.putImageData(image,0,0); context.strokeStyle='rgba(255,255,255,.22)'; context.lineWidth=1;
+  const dark=$('#theme').value==='dark';
+  context.putImageData(image,0,0); context.fillStyle=dark?'rgba(7,16,25,.22)':'rgba(248,245,238,.08)';context.fillRect(0,0,w,h);
+  context.strokeStyle=dark?'rgba(237,248,255,.32)':'rgba(255,255,255,.22)'; context.lineWidth=1;
   for(let i=0;i<=16;i++) {
     context.beginPath();context.moveTo(i*w/16,0);context.lineTo(i*w/16,h);context.stroke();
     context.beginPath();context.moveTo(0,i*h/16);context.lineTo(w,i*h/16);context.stroke();
   }
   starts.forEach((p,i) => {
-    const scale=Math.max(1,w/800),x=p[0]*w,y=p[1]*h;context.beginPath();context.arc(x,y,12*scale,0,Math.PI*2);context.fillStyle='#f8f5ee';context.fill();
-    context.lineWidth=4*scale;context.strokeStyle='#17324d';context.stroke();context.fillStyle='#17324d';context.font=`bold ${13*scale}px ui-monospace`;context.fillText(String(i+1),x+18*scale,y+5*scale);
+    const scale=Math.max(1,w/800),x=p[0]*w,y=p[1]*h;context.beginPath();context.arc(x,y,12*scale,0,Math.PI*2);context.fillStyle=dark?'#071019':'#f8f5ee';context.fill();
+    context.lineWidth=4*scale;context.strokeStyle=dark?'#edf8ff':'#17324d';context.stroke();context.fillStyle=dark?'#edf8ff':'#17324d';context.font=`bold ${13*scale}px ui-monospace`;context.fillText(String(i+1),x+18*scale,y+5*scale);
   });
 }
 
@@ -250,6 +257,7 @@ $$('[data-close]').forEach(button=>button.onclick=()=>$('#'+button.dataset.close
 $('#steps').oninput=e=>{$('#stepsOut').value=e.target.value;scheduleRender()};
 $('#stepLength').oninput=e=>{$('#stepLengthOut').value=`${(+e.target.value).toFixed(2)}×`;scheduleRender()};
 $('#palette').onchange=()=>{updateStrip();scheduleRender()};updateStrip();
+$('#theme').onchange=()=>{applyTheme();scheduleRender(120)};applyTheme();
 $('#reliefMode').onchange=()=>{applyReliefMode();scheduleRender()};
 $('#heightScale').oninput=()=>{$('#reliefMode').value='manual';applyReliefMode();scheduleRender()};applyReliefMode();
 $('#objective').onchange=()=>{const mode=$('#objective').value;$('#generate span').textContent=`Generate ${mode} artwork`;scheduleRender(120)};
@@ -262,7 +270,7 @@ $('#printOrientation').onchange=()=>{let width=+$('#printWidth').value,height=+$
 $('#title').addEventListener('input',()=>scheduleRender(500));
 $$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));
 
-function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,print_width:+$('#printWidth').value,print_height:+$('#printHeight').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90}}
+function config(){return{title:$('#title').value||'UNTITLED DEM',objective:$('#objective').value,steps:+$('#steps').value,step_length:+$('#stepLength').value,trajectory_style:$('#trajectoryStyle').value,theme:$('#theme').value,print_width:+$('#printWidth').value,print_height:+$('#printHeight').value,start_points:starts.length?starts:[[.5,.5]],optimizers:$$('#optimizers input:checked').map(x=>x.value),palette:$('#palette').value,smoothing:+$('#smoothing').value,grid_lines:+$('#lines').value,vertical_scale:+$('#heightScale').value,fill_opacity:+$('#fillOpacity').value,auto_fit:true,surface_top:90}}
 
 function scheduleRender(delay=320) {
   if(!grid)return;renderVersion++;clearTimeout(renderTimer);

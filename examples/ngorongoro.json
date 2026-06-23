@@ -6,6 +6,7 @@
   "objective": "descent",
   "step_length": 1.0,
   "trajectory_style": "flowing",
+  "theme": "dark",
   "print_width": 12,
   "print_height": 16,
   "start_points": [[0.572, 0.140], [0.860, 0.428], [0.788, 0.212]],

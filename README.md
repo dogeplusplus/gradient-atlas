@@ -112,6 +112,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `steps` | Number of updates per optimizer |
 | `step_length` | Multiplier applied to each optimizer's default learning rate |
 | `trajectory_style` | `flowing` (layered spline, markers, arrow), `technical` (raw steps), or `minimal` |
+| `theme` | `light` for warm paper or `dark` for a dark atlas background with bright grid lines |
 | `print_width` / `print_height` | Physical output dimensions in inches; supports portrait, landscape, and square formats |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |
 | `optimizers` | Any subset of `SGD`, `Momentum`, `NAG`, `AdaGrad`, `RMSProp`, `Adam` |
@@ -133,7 +134,7 @@ A custom colour map is simply:
 CLI values override the JSON when supplied:
 
 ```bash
-gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --steps 35 --size 20x30 --output output/custom.svg
+gradient-atlas examples/yosemite.json --dem data/my-dem.tif --palette magma --theme dark --steps 35 --size 20x30 --output output/custom.svg
 ```
 
 ## Included examples

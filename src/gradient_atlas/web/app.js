@@ -271,7 +271,8 @@ $('#tileRotation').onchange=()=>{const next=+$('#tileRotation').value,turns=((ne
 $('#printPreset').onchange=applyPrintPreset;
 $('#printOrientation').onchange=()=>{let width=+$('#printWidth').value,height=+$('#printHeight').value;const landscape=$('#printOrientation').value==='landscape';if((landscape&&height>width)||(!landscape&&width>height)){[$('#printWidth').value,$('#printHeight').value]=[height,width]}updatePrintHint();scheduleRender(180)};
 ['printWidth','printHeight'].forEach(id=>$('#'+id).addEventListener('input',()=>{$('#printPreset').value='custom';updatePrintHint();scheduleRender()}));
-['trajectoryStyle','meshStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
+$('#meshStyle').addEventListener('input',()=>{if($('#meshStyle').value==='triangles'&&+$('#fillOpacity').value<0.42)$('#fillOpacity').value=0.42;scheduleRender()});
+['trajectoryStyle','lines','fillOpacity'].forEach(id=>$('#'+id).addEventListener('input',()=>scheduleRender()));
 $('#title').addEventListener('input',()=>scheduleRender(500));
 $$('#optimizers input').forEach(input=>input.addEventListener('change',()=>scheduleRender(120)));
 

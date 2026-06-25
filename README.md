@@ -51,7 +51,7 @@ pip install -e ".[images]"   # PNG and JPEG
 pip install -e ".[geotiff]" # GeoTIFF
 ```
 
-Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, square or triangular surface meshes, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and dark-mode-friendly palettes such as `aurora`, `ember`, `twilight`, `topo`, and `glacier`. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The map fetcher can download multi-tile selections in parallel when a wide region spans several terrain tiles. The CLI remains available for repeatable or automated rendering.
+Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, square wire or polygon-facet surface meshes, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and dark-mode-friendly palettes such as `aurora`, `ember`, `twilight`, `topo`, and `glacier`. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The map fetcher can download multi-tile selections in parallel when a wide region spans several terrain tiles. The CLI remains available for repeatable or automated rendering.
 
 ### Print sizes and aspect ratios
 
@@ -112,7 +112,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `steps` | Number of updates per optimizer |
 | `step_length` | Multiplier applied to each optimizer's default learning rate |
 | `trajectory_style` | `flowing` (layered spline, markers, arrow), `technical` (raw steps), or `minimal` |
-| `mesh_style` | `triangles` for faceted polygon terrain or `grid` for the original square wire mesh |
+| `mesh_style` | `triangles` for larger low-poly colour facets or `grid` for the original square wire mesh |
 | `theme` | `light` for warm paper or `dark` for a dark atlas background with bright grid lines |
 | `print_width` / `print_height` | Physical output dimensions in inches; supports portrait, landscape, and square formats |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |
@@ -123,7 +123,7 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `vertical_scale` | Visual height exaggeration |
 | `auto_fit` | Measure and fit each surface into the available vertical poster area |
 | `surface_top` / `surface_bottom` | Vertical framing bounds; with print dimensions, the lower bound is derived from the page aspect |
-| `fill_opacity` | Transparent colour wash beneath the wireframe; dark theme enforces a brighter minimum |
+| `fill_opacity` | Transparent colour wash; polygon facets work best around `0.42` or higher |
 | `png_preview` | Also create a PNG when a converter is available |
 
 A custom colour map is simply:

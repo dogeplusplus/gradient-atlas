@@ -142,11 +142,27 @@ def _start_label(index: int) -> str:
     return f"θ₀·{index + 1}"
 
 
-def _triangle_corners(x0: float, x1: float, y0: float, y1: float,
-                      ix: int, iy: int) -> list[list[tuple[float, float]]]:
-    if (ix + iy) % 2:
-        return [[(x0, y0), (x1, y0), (x0, y1)], [(x1, y0), (x1, y1), (x0, y1)]]
-    return [[(x0, y0), (x1, y0), (x1, y1)], [(x0, y0), (x1, y1), (x0, y1)]]
+def _jitter(ix: int, iy: int) -> tuple[float, float]:
+    seed = (ix * 73856093) ^ (iy * 19349663)
+    a = ((seed & 1023) / 1023) - 0.5
+    b = (((seed >> 10) & 1023) / 1023) - 0.5
+    return a, b
+
+
+def _polygon_vertices(size: int) -> list[list[tuple[float, float]]]:
+    step = 6 / (size - 1)
+    vertices = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            px, py = -3 + step * x, -3 + step * y
+            if 0 < x < size - 1 and 0 < y < size - 1:
+                jx, jy = _jitter(x, y)
+                px += jx * step * 0.42
+                py += jy * step * 0.42
+            row.append((px, py))
+        vertices.append(row)
+    return vertices
 
 
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
@@ -167,10 +183,14 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     mesh_style = str(config.get("mesh_style", "grid")).lower()
     vertical_scale = float(config.get("vertical_scale", 1.0))
     fill_opacity = float(config.get("fill_opacity", 0.10))
-    theme = THEMES.get(str(config.get("theme", "light")).lower(), THEMES["light"])
+    theme_name = str(config.get("theme", "light")).lower()
+    theme = THEMES.get(theme_name, THEMES["light"])
     paper, ink, muted = theme["paper"], theme["ink"], theme["muted"]
     major_grid_opacity, minor_grid_opacity = theme["grid_opacity"]
     fill_opacity = max(fill_opacity, float(theme["min_fill_opacity"]))
+    if mesh_style == "triangles":
+        fill_opacity = max(fill_opacity, 0.42 if theme_name == "dark" else 0.30)
+        major_grid_opacity, minor_grid_opacity = min(major_grid_opacity, 0.58), min(minor_grid_opacity, 0.34)
     palette_value = config.get("palette", "spectrum")
     palette = tuple(palette_value) if isinstance(palette_value, list) else PALETTES.get(palette_value, PALETTES["spectrum"])
     methods = config.get("optimizers", list(OPTIMIZER_COLORS))
@@ -188,14 +208,25 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
            f'<rect width="{page_width}" height="{page_height}" fill="{paper}"/>',
            '<g fill="none" stroke-linecap="round" stroke-linejoin="round">']
 
-    resolution = 68
+    resolution = max(18, min(38, round(grid_lines * 0.42))) if mesh_style == "triangles" else 68
     cells = []
-    for ix in range(resolution):
-        for iy in range(resolution):
-            x0, x1 = -3 + 6 * ix / resolution, -3 + 6 * (ix + 1) / resolution
-            y0, y1 = -3 + 6 * iy / resolution, -3 + 6 * (iy + 1) / resolution
-            polygons = _triangle_corners(x0, x1, y0, y1, ix, iy) if mesh_style == "triangles" else [[(x0, y0), (x1, y0), (x1, y1), (x0, y1)]]
-            for corners in polygons:
+    if mesh_style == "triangles":
+        vertices = _polygon_vertices(resolution + 1)
+        for ix in range(resolution):
+            for iy in range(resolution):
+                v00, v10 = vertices[iy][ix], vertices[iy][ix + 1]
+                v01, v11 = vertices[iy + 1][ix], vertices[iy + 1][ix + 1]
+                polygons = [[v00, v10, v01], [v10, v11, v01]] if (ix + iy) % 2 else [[v00, v10, v11], [v00, v11, v01]]
+                for corners in polygons:
+                    zs = [surface.value(x, y) for x, y in corners]
+                    cells.append((sum(x + y for x, y in corners) / len(corners),
+                                  [project(x, y, z) for (x, y), z in zip(corners, zs)], sum(zs) / len(zs)))
+    else:
+        for ix in range(resolution):
+            for iy in range(resolution):
+                x0, x1 = -3 + 6 * ix / resolution, -3 + 6 * (ix + 1) / resolution
+                y0, y1 = -3 + 6 * iy / resolution, -3 + 6 * (iy + 1) / resolution
+                corners = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
                 zs = [surface.value(x, y) for x, y in corners]
                 cells.append((x0 + y0, [project(x, y, z) for (x, y), z in zip(corners, zs)], sum(zs) / len(zs)))
     for _, points, z in sorted(cells):
@@ -203,8 +234,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         svg.append(f'<polygon points="{_points(points)}" fill="{c}" fill-opacity="{fill_opacity}" stroke="none"/>')
 
     if mesh_style == "triangles":
-        mesh = max(12, grid_lines)
-        vertices = [[(-3 + 6 * x / (mesh - 1), -3 + 6 * y / (mesh - 1)) for x in range(mesh)] for y in range(mesh)]
+        mesh = resolution + 1
         projected = [[project(x, y, surface.value(x, y)) for x, y in row] for row in vertices]
         for y in range(mesh - 1):
             for x in range(mesh - 1):
@@ -217,7 +247,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
                 major = x % 6 == 0 or y % 6 == 0
                 for a, b, va, vb in edges:
                     c = _colour((surface.value(*va) + surface.value(*vb)) / 2, palette)
-                    svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.85 if major else 0.38}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
+                    svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.65 if major else 0.28}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
     else:
         samples = 160
         for family in ("x", "y"):

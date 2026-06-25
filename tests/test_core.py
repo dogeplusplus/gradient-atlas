@@ -85,11 +85,12 @@ class CoreTests(unittest.TestCase):
             triangle_target = Path(temp) / "triangles.svg"
             config = {"grid_lines": 4, "steps": 2, "optimizers": ["SGD"]}
             render(surface, config | {"mesh_style": "grid"}, grid_target)
-            render(surface, config | {"mesh_style": "triangles"}, triangle_target)
-            self.assertGreater(
-                triangle_target.read_text(encoding="utf-8").count("<polygon"),
-                grid_target.read_text(encoding="utf-8").count("<polygon"),
-            )
+            render(surface, config | {"mesh_style": "triangles", "theme": "dark"}, triangle_target)
+            grid_svg = grid_target.read_text(encoding="utf-8")
+            triangle_svg = triangle_target.read_text(encoding="utf-8")
+            self.assertGreater(triangle_svg.count("<polygon"), 500)
+            self.assertLess(triangle_svg.count("<polygon"), grid_svg.count("<polygon"))
+            self.assertIn('fill-opacity="0.42"', triangle_svg)
 
     def test_dark_friendly_palettes_are_available(self):
         for name in ("aurora", "ember", "twilight", "topo", "glacier"):

@@ -33,7 +33,7 @@ def main() -> None:
     parser.add_argument("--start", action="append", metavar="X,Y", help="Start point in visual 0..1 coordinates; repeatable")
     parser.add_argument("--palette", choices=tuple(PALETTES), help="Override colour map")
     parser.add_argument("--theme", choices=tuple(THEMES), help="Override artwork theme")
-    parser.add_argument("--mesh-style", choices=("grid", "triangles"), help="Override surface mesh style")
+    parser.add_argument("--mesh-style", choices=("grid", "triangles", "contours"), help="Override surface mesh style")
     args = parser.parse_args()
     config_path = args.config.resolve()
     config = json.loads(config_path.read_text(encoding="utf-8"))

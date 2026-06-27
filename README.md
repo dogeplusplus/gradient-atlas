@@ -51,7 +51,7 @@ pip install -e ".[images]"   # PNG and JPEG
 pip install -e ".[geotiff]" # GeoTIFF
 ```
 
-Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, square wire or polygon-facet surface meshes, three trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and dark-mode-friendly palettes such as `aurora`, `ember`, `twilight`, `topo`, and `glacier`. “Flowing ink” preserves every optimizer sample while drawing a restrained spline, hollow step marks, and a directional chevron for a more deliberate wall-art composition. The map fetcher can download multi-tile selections in parallel when a wide region spans several terrain tiles. The CLI remains available for repeatable or automated rendering.
+Useful controls include optimizer selection, 5–80 steps, a 0.25×–2× step-length scale, 90° terrain rotation, low-poly, topographic-contour, or woven-wire surfaces, five trajectory treatments, visual start-point placement, smoothing, line density, vertical exaggeration, colour wash, and dark-mode-friendly palettes such as `aurora`, `ember`, `twilight`, `topo`, and `glacier`. “Flowing ink” creates a restrained layered spline; “Constellation” turns sampled steps into optimizer-specific glyphs; and “Encoded weave” combines those glyphs with distinct line rhythms so overlapping paths remain readable without relying on colour alone. The map fetcher can download multi-tile selections in parallel when a wide region spans several terrain tiles. The CLI remains available for repeatable or automated rendering.
 
 ### Print sizes and aspect ratios
 
@@ -111,8 +111,8 @@ gradient-atlas examples/ngorongoro.json --steps 40 --start 0.65,0.40 --start 0.3
 | `dem` | CSV, GeoTIFF, PNG, or JPEG elevation grid |
 | `steps` | Number of updates per optimizer |
 | `step_length` | Multiplier applied to each optimizer's default learning rate |
-| `trajectory_style` | `flowing` (layered spline, markers, arrow), `technical` (raw steps), or `minimal` |
-| `mesh_style` | `triangles` for larger low-poly colour facets or `grid` for the original square wire mesh |
+| `trajectory_style` | `flowing`, `constellation`, `encoded`, `technical`, or `minimal` |
+| `mesh_style` | `triangles` for low-poly facets, `contours` for elevation isolines, or `grid` for a woven wire mesh |
 | `theme` | `light` for warm paper or `dark` for a dark atlas background with bright grid lines |
 | `print_width` / `print_height` | Physical output dimensions in inches; supports portrait, landscape, and square formats |
 | `start_points` | One or more `[x,y]` points in the visual `0..1` coordinate system |

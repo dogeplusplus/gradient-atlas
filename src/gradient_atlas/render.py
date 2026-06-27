@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import math
+from html import escape
 from pathlib import Path
 
 from .dem import Surface
@@ -165,6 +166,56 @@ def _polygon_vertices(size: int) -> list[list[tuple[float, float]]]:
     return vertices
 
 
+def _contour_segments(surface: Surface, levels: int = 14, size: int = 72):
+    """Return projected-ready contour segments using marching squares."""
+    samples = [[surface.value(-3 + 6 * x / size, -3 + 6 * y / size)
+                for x in range(size + 1)] for y in range(size + 1)]
+    low, high = min(map(min, samples)), max(map(max, samples))
+    contours = []
+    for level_index in range(1, levels + 1):
+        level = low + (high - low) * level_index / (levels + 1)
+        segments = []
+        for y in range(size):
+            for x in range(size):
+                corners = [
+                    (-3 + 6 * x / size, -3 + 6 * y / size, samples[y][x]),
+                    (-3 + 6 * (x + 1) / size, -3 + 6 * y / size, samples[y][x + 1]),
+                    (-3 + 6 * (x + 1) / size, -3 + 6 * (y + 1) / size, samples[y + 1][x + 1]),
+                    (-3 + 6 * x / size, -3 + 6 * (y + 1) / size, samples[y + 1][x]),
+                ]
+                hits = []
+                for a, b in ((0, 1), (1, 2), (2, 3), (3, 0)):
+                    za, zb = corners[a][2], corners[b][2]
+                    if (za < level <= zb) or (zb < level <= za):
+                        t = (level - za) / (zb - za)
+                        hits.append((corners[a][0] + (corners[b][0] - corners[a][0]) * t,
+                                     corners[a][1] + (corners[b][1] - corners[a][1]) * t))
+                if len(hits) == 2:
+                    segments.append((hits[0], hits[1]))
+                elif len(hits) == 4:
+                    segments.extend(((hits[0], hits[1]), (hits[2], hits[3])))
+        contours.append((level, segments))
+    return contours
+
+
+def _trajectory_marker(x: float, y: float, index: int, colour: str, paper: str,
+                       radius: float, opacity: float) -> str:
+    """Give every optimizer a recognizable glyph as well as a colour."""
+    shape = index % 6
+    common = f'stroke="{colour}" stroke-width="1.5" opacity="{opacity}"'
+    if shape == 0:
+        return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{radius:.1f}" fill="{paper}" {common}/>'
+    if shape == 1:
+        return f'<rect x="{x-radius:.1f}" y="{y-radius:.1f}" width="{2*radius:.1f}" height="{2*radius:.1f}" rx="0.8" fill="{paper}" {common}/>'
+    if shape == 2:
+        return f'<polygon points="{x:.1f},{y-radius-0.8:.1f} {x+radius+0.8:.1f},{y:.1f} {x:.1f},{y+radius+0.8:.1f} {x-radius-0.8:.1f},{y:.1f}" fill="{paper}" {common}/>'
+    if shape == 3:
+        return f'<polygon points="{x:.1f},{y-radius-1:.1f} {x+radius+1:.1f},{y+radius:.1f} {x-radius-1:.1f},{y+radius:.1f}" fill="{paper}" {common}/>'
+    if shape == 4:
+        return f'<path d="M {x-radius:.1f} {y:.1f} L {x+radius:.1f} {y:.1f} M {x:.1f} {y-radius:.1f} L {x:.1f} {y+radius:.1f}" {common} fill="none"/>'
+    return f'<path d="M {x-radius:.1f} {y-radius:.1f} L {x+radius:.1f} {y+radius:.1f} M {x+radius:.1f} {y-radius:.1f} L {x-radius:.1f} {y+radius:.1f}" {common} fill="none"/>'
+
+
 def render(surface: Surface, config: dict, output: str | Path) -> Path:
     print_width = float(config.get("print_width", 12.0))
     print_height = float(config.get("print_height", 16.0))
@@ -176,7 +227,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         page_width, page_height = W, round(W * print_height / print_width)
     else:
         page_height, page_width = 1200, round(1200 * print_width / print_height)
-    title = config.get("title", "UNTITLED DEM").upper()
+    title = escape(str(config.get("title", "UNTITLED DEM")).upper())
     steps = int(config.get("steps", 22))
     step_length = float(config.get("step_length", 1.0))
     grid_lines = int(config.get("grid_lines", 75))
@@ -248,6 +299,13 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
                 for a, b, va, vb in edges:
                     c = _colour((surface.value(*va) + surface.value(*vb)) / 2, palette)
                     svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{c}" stroke-width="{0.65 if major else 0.28}" opacity="{major_grid_opacity if major else minor_grid_opacity}"/>')
+    elif mesh_style == "contours":
+        for level_index, (level, segments) in enumerate(_contour_segments(surface)):
+            colour = _colour(level, palette)
+            major = level_index % 4 == 3
+            for (x1, y1), (x2, y2) in segments:
+                a, b = project(x1, y1, level + 0.01), project(x2, y2, level + 0.01)
+                svg.append(f'<line x1="{a[0]:.1f}" y1="{a[1]:.1f}" x2="{b[0]:.1f}" y2="{b[1]:.1f}" stroke="{colour}" stroke-width="{1.7 if major else 0.75}" opacity="{0.92 if major else 0.58}"/>')
     else:
         samples = 160
         for family in ("x", "y"):
@@ -266,7 +324,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
 
     trajectory_art = []
     for start_index, start in enumerate(starts):
-        for method in methods:
+        for method_index, method in enumerate(methods):
             colour = OPTIMIZER_COLORS[method]
             path = run(surface, method, start, steps, objective, step_length)
             projected = _clean_trajectory([
@@ -277,6 +335,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
             primary = start_index == 0
             trajectory_art.append({
                 "colour": colour, "path_d": path_d, "points": projected, "primary": primary,
+                "method": method, "method_index": method_index,
                 "length": sum(math.dist(a, b) for a, b in zip(projected, projected[1:])),
             })
 
@@ -287,19 +346,25 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
     if trajectory_style == "flowing":
         for item in trajectory_art:
             svg.append(f'<path d="{item["path_d"]}" stroke="{item["colour"]}" stroke-width="{5.4 if item["primary"] else 4.0}" opacity="{0.22 if item["primary"] else 0.15}"/>')
+    dash_patterns = ("", "12 5", "2 4", "15 4 2 4", "7 3", "1 3")
     for item in trajectory_art:
-        svg.append(f'<path d="{item["path_d"]}" stroke="{item["colour"]}" stroke-width="{2.8 if item["primary"] else 2.0}" opacity="{0.98 if item["primary"] else 0.68}"/>')
+        encoded = trajectory_style == "encoded"
+        dash = f' stroke-dasharray="{dash_patterns[item["method_index"] % 6]}"' if encoded and item["method_index"] else ""
+        width = 3.2 if encoded and item["primary"] else (2.8 if item["primary"] else 2.0)
+        svg.append(f'<path d="{item["path_d"]}" stroke="{item["colour"]}" stroke-width="{width}" opacity="{0.98 if item["primary"] else 0.72}"{dash}/>')
 
     for item in trajectory_art:
         projected = item["points"]
         colour = item["colour"]
         primary = item["primary"]
-        if trajectory_style in {"flowing", "technical"} and len(projected) > 3:
-            marker_count = 4 if trajectory_style == "flowing" else min(8, len(projected) - 2)
+        if trajectory_style in {"flowing", "technical", "constellation", "encoded"} and len(projected) > 3:
+            marker_count = 6 if trajectory_style == "constellation" else (4 if trajectory_style in {"flowing", "encoded"} else min(8, len(projected) - 2))
             marker_indices = sorted({round(i * (len(projected) - 1) / (marker_count + 1)) for i in range(1, marker_count + 1)})
             for marker_index in marker_indices:
                 mx, my = projected[marker_index]
-                svg.append(f'<circle cx="{mx:.1f}" cy="{my:.1f}" r="{2.5 if primary else 2}" fill="{paper}" stroke="{colour}" stroke-width="1.4" opacity="{0.95 if primary else 0.7}"/>')
+                svg.append(_trajectory_marker(mx, my, item["method_index"], colour, paper,
+                                              3.0 if trajectory_style == "constellation" else (2.5 if primary else 2),
+                                              0.95 if primary else 0.72))
             chevron = _direction_chevron(projected)
             if chevron:
                 svg.append(f'<path d="{chevron}" stroke="{colour}" stroke-width="{2.2 if primary else 1.7}" opacity="{0.95 if primary else 0.68}"/>')
@@ -312,7 +377,7 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         svg.append(f'<text x="{p[0] + 12:.1f}" y="{p[1] - 10:.1f}" fill="{ink}" opacity="0.9" font-family="monospace" font-size="13">{_start_label(start_index)}</text>')
     svg.append('</g>')
 
-    # A crisp DEM title with a quiet six-pen rule—colour without faux blur.
+    # Museum-label typography: title first, then a compact scientific key.
     title_y = page_height - 352
     title_size = min(60, max(42, (page_width - 220) / max(1, len(title) * 0.62)))
     svg.append(f'<text x="72" y="{title_y}" fill="{ink}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="{title_size:.1f}" letter-spacing="2.5">{title}</text>')
@@ -322,16 +387,17 @@ def render(surface: Surface, config: dict, output: str | Path) -> Path:
         svg.append(f'<line x1="{x1}" y1="{page_height - 330}" x2="{x1 + segment_width - 8}" y2="{page_height - 330}" stroke="{OPTIMIZER_COLORS[method]}" stroke-width="4"/>')
     svg.append(f'<text x="75" y="{page_height - 295}" fill="{muted}" opacity="0.72" font-family="Helvetica,Arial,sans-serif" font-size="15" letter-spacing="1.8">{objective.upper()} · {steps} STEPS · {step_length:g}× STEP LENGTH  </text>')
     svg.append(f'<line x1="75" y1="{page_height - 272}" x2="{page_width - 75}" y2="{page_height - 272}" stroke="{ink}" opacity="{theme["rule_opacity"]}"/>')
-    positions = [(75, page_height - 244), (75, page_height - 190), (75, page_height - 136),
-                 (page_width / 2 + 25, page_height - 244), (page_width / 2 + 25, page_height - 190), (page_width / 2 + 25, page_height - 136)]
-    for method, (x, y) in zip(methods, positions):
+    positions = [(75, page_height - 238), (75, page_height - 176), (75, page_height - 114),
+                 (page_width / 2 + 25, page_height - 238), (page_width / 2 + 25, page_height - 176), (page_width / 2 + 25, page_height - 114)]
+    for method_index, (method, (x, y)) in enumerate(zip(methods, positions)):
         c = OPTIMIZER_COLORS[method]
-        svg.append(f'<line x1="{x}" y1="{y - 5}" x2="{x + 28}" y2="{y - 5}" stroke="{c}" stroke-width="5"/>')
-        svg.append(f'<text x="{x + 38}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="14">{method.upper()}</text>')
+        svg.append(_trajectory_marker(x + 10, y - 5, method_index, c, paper, 4.2, 1.0))
+        svg.append(f'<text x="{x + 27}" y="{y}" fill="{c}" font-family="Helvetica,Arial,sans-serif" font-weight="700" font-size="15" letter-spacing="0.8">{method.upper()}</text>')
         for line_index, equation in enumerate(equations[method]):
-            svg.append(f'<text x="{x + 38}" y="{y + 20 + line_index * 15}" fill="{ink}" font-family="monospace" font-size="11.8">{equation}</text>')
-    svg.extend([f'<line x1="75" y1="{page_height - 88}" x2="{page_width - 75}" y2="{page_height - 88}" stroke="{ink}" opacity="{theme["rule_opacity"]}"/>',
-                f'<text x="75" y="{page_height - 55}" fill="{muted}" opacity="0.68" font-family="monospace" font-size="12">gₜ = ∇L(θₜ) · coordinates normalized to the supplied DEM</text>', '</svg>'])
+            svg.append(f'<text x="{x + 27}" y="{y + 21 + line_index * 16}" fill="{ink}" opacity="0.9" font-family="Georgia,Times New Roman,serif" font-style="italic" font-size="13.2">{equation}</text>')
+    svg.extend([f'<line x1="75" y1="{page_height - 72}" x2="{page_width - 75}" y2="{page_height - 72}" stroke="{ink}" opacity="{theme["rule_opacity"]}"/>',
+                f'<text x="75" y="{page_height - 41}" fill="{muted}" opacity="0.72" font-family="Helvetica,Arial,sans-serif" font-size="11.5" letter-spacing="0.8">gₜ = ∇L(θₜ)  ·  NORMALIZED DEM COORDINATES</text>',
+                f'<text x="{page_width / 2 + 25:g}" y="{page_height - 41}" fill="{muted}" opacity="0.72" font-family="Georgia,Times New Roman,serif" font-style="italic" font-size="12">m̂ₜ = mₜ/(1−β₁ᵗ)  ·  v̂ₜ = vₜ/(1−β₂ᵗ)</text>', '</svg>'])
     output = Path(output)
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text("\n".join(svg), encoding="utf-8")

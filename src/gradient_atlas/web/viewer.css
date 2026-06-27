@@ -14,7 +14,7 @@
 .result-heading{justify-content:space-between}
 .result-heading>div{display:flex;align-items:center;gap:10px}
 .result-heading .expand-button{margin-left:auto}
-.art-shell{aspect-ratio:auto;min-height:610px;max-height:calc(100vh - 215px)}
+.art-shell{aspect-ratio:auto;height:calc(100vh - 215px);min-height:420px;max-height:720px}
 .expand-button{font-weight:700;color:#1d6f73;border-color:#9bbab8}
 .generate-top{width:100%;min-width:0;height:44px;padding:0 14px;gap:18px;margin-top:8px}
 
@@ -34,7 +34,19 @@
 .dialog-empty{position:absolute;inset:0;display:grid;place-items:center;color:#7b898e;font:12px ui-monospace,SFMono-Regular,Menlo,monospace}
 .large-terrain-shell.ready .dialog-empty,.large-art-shell.ready .dialog-empty{display:none}
 
-@media(max-width:1300px){.workspace{grid-template-columns:350px 330px minmax(430px,1fr)}.panel{padding-left:16px;padding-right:16px}.art-shell{min-height:540px}.terrain-shell{flex-basis:230px}}
+@media(max-width:1300px){.workspace{grid-template-columns:350px 330px minmax(430px,1fr)}.panel{padding-left:16px;padding-right:16px}.terrain-shell{flex-basis:230px}}
+
+@media(max-width:1100px){
+  body{min-width:0}.workspace{grid-template-columns:310px minmax(0,1fr)}
+  .controls{grid-column:1}.stage{grid-column:2}.result-panel{grid-column:1/-1;border-left:0;border-top:1px solid var(--line)}
+  .art-shell{height:min(78vh,820px);min-height:480px}.masthead{padding-left:22px;padding-right:22px}
+}
+@media(max-width:720px){
+  .masthead{height:74px}.masthead h1{font-size:24px}.privacy{display:none}
+  .workspace{display:block;min-height:0}.controls,.stage,.result-panel{width:100%;border:0;border-bottom:1px solid var(--line)}
+  .stage{padding:18px 16px}.terrain-shell{height:auto;min-height:250px;max-height:none;aspect-ratio:4/3}
+  .art-shell{height:min(76vh,680px);min-height:420px}.print-options{grid-template-columns:1fr 1fr}
+}
 
 body[data-theme=dark] .viewer-dialog{border-color:#263b4a;background:#071019;color:#edf8ff;box-shadow:0 28px 90px rgba(0,0,0,.55)}
 body[data-theme=dark] .viewer-dialog header,body[data-theme=dark] .viewer-dialog footer{border-color:#243746;background:#0b1722;color:#9fb4c2}

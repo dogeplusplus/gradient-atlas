@@ -1,12 +1,13 @@
 import math
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from unittest.mock import patch
 
 from gradient_atlas.dem import Surface, normalize, resample
 from gradient_atlas.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
-from gradient_atlas.render import PALETTES, _clean_trajectory, _direction_chevron, _trajectory_d, render
+from gradient_atlas.render import PALETTES, _clean_trajectory, _contour_segments, _direction_chevron, _trajectory_d, render
 from gradient_atlas.webapp import parse_multipart
 from gradient_atlas import terrain_fetch
 from gradient_atlas.terrain_fetch import _zoom_for_bbox
@@ -91,6 +92,20 @@ class CoreTests(unittest.TestCase):
             self.assertGreater(triangle_svg.count("<polygon"), 500)
             self.assertLess(triangle_svg.count("<polygon"), grid_svg.count("<polygon"))
             self.assertIn('fill-opacity="0.42"', triangle_svg)
+
+    def test_render_supports_topographic_contours(self):
+        surface = Surface(normalize(bowl()))
+        contours = _contour_segments(surface, levels=8, size=24)
+        self.assertEqual(len(contours), 8)
+        self.assertTrue(all(segments for _, segments in contours))
+        with tempfile.TemporaryDirectory() as temp:
+            target = Path(temp) / "contours.svg"
+            render(surface, {"mesh_style": "contours", "trajectory_style": "encoded",
+                             "grid_lines": 20, "steps": 8, "optimizers": ["SGD", "Adam"]}, target)
+            svg = target.read_text(encoding="utf-8")
+            ET.parse(target)
+            self.assertIn('stroke-dasharray=', svg)
+            self.assertGreater(svg.count("<line"), 500)
 
     def test_dark_friendly_palettes_are_available(self):
         for name in ("aurora", "ember", "twilight", "topo", "glacier"):

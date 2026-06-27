@@ -61,21 +61,28 @@ def _project(x: float, y: float, z: float, vertical_scale: float,
 
 def _projector(surface: Surface, vertical_scale: float, auto_fit: bool,
                top: float, bottom: float, page_width: int = W):
-    """Create a projection fitted vertically to the surface's actual coverage."""
+    """Fit the complete surface to the art bounds without distorting its aspect."""
     if not auto_fit:
         return lambda x, y, z: _project(x, y, z, vertical_scale, page_width)
-    ys = []
+    projected = []
     for j in range(49):
         y = -3 + 6 * j / 48
         for i in range(49):
             x = -3 + 6 * i / 48
-            ys.append(_project(x, y, surface.value(x, y), vertical_scale, page_width)[1])
-    low, high = min(ys), max(ys)
-    scale = (bottom - top) / (high - low or 1)
+            projected.append(_project(x, y, surface.value(x, y), vertical_scale, page_width))
+    x_low, x_high = min(x for x, _ in projected), max(x for x, _ in projected)
+    y_low, y_high = min(y for _, y in projected), max(y for _, y in projected)
+    side = max(42.0, page_width * 0.035)
+    scale = min((page_width - 2 * side) / (x_high - x_low or 1),
+                (bottom - top) / (y_high - y_low or 1))
+    fitted_width = (x_high - x_low) * scale
+    fitted_height = (y_high - y_low) * scale
+    left = (page_width - fitted_width) / 2
+    fitted_top = top + ((bottom - top) - fitted_height) / 2
 
     def fitted(x: float, y: float, z: float) -> tuple[float, float]:
         px, py = _project(x, y, z, vertical_scale, page_width)
-        return px, top + (py - low) * scale
+        return left + (px - x_low) * scale, fitted_top + (py - y_low) * scale
 
     return fitted
 

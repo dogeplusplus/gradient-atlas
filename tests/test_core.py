@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 from gradient_atlas.dem import Surface, normalize, resample
 from gradient_atlas.optimizers import EQUATIONS, OPTIMIZER_COLORS, equation_lines, find_high_disagreement_starts, run
-from gradient_atlas.render import PALETTES, _clean_trajectory, _contour_segments, _direction_chevron, _trajectory_d, render
+from gradient_atlas.render import PALETTES, _clean_trajectory, _contour_segments, _direction_chevron, _projector, _trajectory_d, render
 from gradient_atlas.webapp import parse_multipart
 from gradient_atlas import terrain_fetch
 from gradient_atlas.terrain_fetch import _zoom_for_bbox
@@ -65,6 +65,17 @@ class CoreTests(unittest.TestCase):
                 svg = target.read_text(encoding="utf-8")
                 self.assertIn(f'viewBox="{viewbox}"', svg)
                 self.assertIn(f'width="{width}in" height="{height}in"', svg)
+
+    def test_auto_fit_keeps_the_complete_tile_inside_art_bounds(self):
+        surface = Surface(normalize(bowl()))
+        project = _projector(surface, 1.0, True, 90, 1185, 1200)
+        points = [project(-3 + 6 * x / 60, -3 + 6 * y / 60,
+                          surface.value(-3 + 6 * x / 60, -3 + 6 * y / 60))
+                  for y in range(61) for x in range(61)]
+        self.assertGreaterEqual(min(x for x, _ in points), 42)
+        self.assertLessEqual(max(x for x, _ in points), 1158)
+        self.assertGreaterEqual(min(y for _, y in points), 90)
+        self.assertLessEqual(max(y for _, y in points), 1185)
 
     def test_render_supports_dark_theme(self):
         surface = Surface(normalize(bowl()))
